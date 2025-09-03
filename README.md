@@ -45,8 +45,8 @@ Teachers can view:
 ---
 
 ## First Release (Implemented)
-- **User authentication** functionality, done by student Justine Barreto.
-- **Add courses** and **view enrolled users**, done by student Justine Barreto.
+- **User authentication** functionality done by student Justine Barreto.
+- **Add courses** and **view enrolled users** done by student Justine Barreto.
 - **CRUD for categories**.
 - **View courses** a user is enrolled in.
 - **Integrated Home screen**.
