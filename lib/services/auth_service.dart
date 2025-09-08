@@ -9,6 +9,15 @@ class AuthService {
   final List<User> _users = [];
 
   User? get currentUser => _currentUser;
+  // Expose a read-only view of registered users so UI screens can list them
+  List<User> get users => List.unmodifiable(_users);
+
+  // Current role for the active session. Can be changed without logging out.
+  String? _currentRole;
+  String? get currentRole => _currentRole;
+  void setRole(String? role) {
+    _currentRole = role;
+  }
 
   Future<bool> login(String email, String password) async {
     try {
