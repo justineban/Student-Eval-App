@@ -47,9 +47,9 @@ Teachers can view:
 ## First Release (Implemented)
 - **User authentication** functionality done by student Justine Barreto.
 - **Add courses** and **view enrolled users** done by student Justine Barreto.
-- **CRUD for categories**.
-- **View courses** a user is enrolled in.
-- **Integrated Home screen**.
+- **CRUD for categories** done by Andrés Evertsz.
+- **View courses** a user is enrolled in done by Andrés Evertsz.
+- **Integrated Home screen** done by Sebastián Maldonado.
 
 - All functionality can be implemented using **in-memory structures (lists)**, without the need for database persistence.
 
