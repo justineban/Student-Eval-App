@@ -6,7 +6,9 @@ class CourseRepositoryImpl implements CourseRepository {
   static final CourseRepositoryImpl _instance =
       CourseRepositoryImpl._internal();
   factory CourseRepositoryImpl() => _instance;
-  CourseRepositoryImpl._internal();
+  CourseRepositoryImpl._internal() {
+    seedTestData();
+  }
 
   final Map<String, List<Course>> _userCourses = {};
 
@@ -113,5 +115,22 @@ class CourseRepositoryImpl implements CourseRepository {
   @override
   int countCoursesForUser(String userId) {
     return getEnrolledCourses(userId).length;
+  }
+
+  void seedTestData() {
+    final test1 = AuthRepositoryImpl().users.firstWhere((u) => u.email == 'a@a.com');
+    final test2 = AuthRepositoryImpl().users.firstWhere((u) => u.email == 'b@a.com');
+
+    final curso1 = Course(
+      id: 'curso1',
+      name: 'curso1',
+      description: 'Test course 1',
+      ownerId: test1.id,
+      ownerName: test1.name,
+      registrationCode: 'CURSO1CODE',
+    );
+
+    _userCourses[test1.id] = [curso1];
+    curso1.enrolledUserIds.add(test2.id);
   }
 }

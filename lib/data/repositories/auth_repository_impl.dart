@@ -15,6 +15,24 @@ class AuthRepositoryImpl implements AuthRepository {
       password: 'password',
       name: 'Test User',
     ),
+    User(
+      id: '2',
+      email: 'a@a.com',
+      password: '123456',
+      name: 'test1',
+    ),
+    User(
+      id: '3',
+      email: 'b@a.com',
+      password: '123456',
+      name: 'test2',
+    ),
+    User(
+      id: '4',
+      email: 'c@a.com',
+      password: '123456',
+      name: 'test3',
+    ),
   ];
 
   @override
