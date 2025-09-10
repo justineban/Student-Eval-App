@@ -11,10 +11,12 @@ class CategoryRepositoryImpl implements CategoryRepository {
   // groups keyed by categoryId
   final Map<String, List<Group>> _categoryGroups = {};
 
+  @override
   List<Category> getCategoriesForCourse(String courseId) {
     return _courseCategories[courseId] ?? [];
   }
 
+  @override
   Category? getCategory(String courseId, String categoryId) {
     final categories = _courseCategories[courseId] ?? [];
     try {
@@ -24,6 +26,7 @@ class CategoryRepositoryImpl implements CategoryRepository {
     }
   }
 
+  @override
   Future<Category> addCategory(
     String courseId,
     String name,
@@ -56,18 +59,21 @@ class CategoryRepositoryImpl implements CategoryRepository {
     return category;
   }
 
+  @override
   List<Group> getGroupsForCategory(String categoryId) {
     return _categoryGroups[categoryId] ?? [];
   }
 
+  @override
   List<Group> getAllGroups() {
     final all = <Group>[];
-    for (var list in _categoryGroups.values) {
+  for (var list in _categoryGroups.values) {
       all.addAll(list);
     }
     return all;
   }
 
+  @override
   Group? getGroup(String categoryId, String groupId) {
     final groups = _categoryGroups[categoryId] ?? [];
     try {
@@ -79,6 +85,7 @@ class CategoryRepositoryImpl implements CategoryRepository {
 
   /// Add a member to a group.
   /// Returns: 1 = success, 2 = already member, 3 = group full, 0 = failure (group not found)
+  @override
   int addMemberToGroup(String categoryId, String groupId, String userId) {
     final group = getGroup(categoryId, groupId);
     if (group == null) return 0;
@@ -94,6 +101,7 @@ class CategoryRepositoryImpl implements CategoryRepository {
     return 1;
   }
 
+  @override
   Category? getCategoryById(String categoryId) {
     for (var entries in _courseCategories.values) {
       for (var cat in entries) {
@@ -103,6 +111,7 @@ class CategoryRepositoryImpl implements CategoryRepository {
     return null;
   }
 
+  @override
   bool removeMemberFromGroup(String categoryId, String groupId, String userId) {
     final group = getGroup(categoryId, groupId);
     if (group == null) return false;
@@ -111,6 +120,7 @@ class CategoryRepositoryImpl implements CategoryRepository {
     return group.memberUserIds.length < initial;
   }
 
+  @override
   bool updateCategory(String courseId, Category updatedCategory) {
     final categories = _courseCategories[courseId];
     if (categories == null) return false;
@@ -122,6 +132,7 @@ class CategoryRepositoryImpl implements CategoryRepository {
     return true;
   }
 
+  @override
   bool deleteCategory(String courseId, String categoryId) {
     final categories = _courseCategories[courseId];
     if (categories == null) return false;

@@ -10,6 +10,7 @@ class CourseRepositoryImpl implements CourseRepository {
 
   final Map<String, List<Course>> _userCourses = {};
 
+  @override
   List<Course> get courses {
     final currentUserId = AuthRepositoryImpl().currentUser?.id;
     if (currentUserId == null) return [];
@@ -17,6 +18,7 @@ class CourseRepositoryImpl implements CourseRepository {
   }
 
   /// Returns a list of all courses across all owners.
+  @override
   List<Course> getAllCourses() {
     final all = <Course>[];
     for (var list in _userCourses.values) {
@@ -25,6 +27,7 @@ class CourseRepositoryImpl implements CourseRepository {
     return List.unmodifiable(all);
   }
 
+  @override
   Future<Course> addCourse(String name, String description) async {
     final currentUserId = AuthRepositoryImpl().currentUser?.id;
     if (currentUserId == null) throw Exception('No hay usuario conectado');
@@ -48,6 +51,7 @@ class CourseRepositoryImpl implements CourseRepository {
   }
 
   /// Enroll a user using the course registration code.
+  @override
   Future<bool> enrollByCode(String registrationCode, String userId) async {
     for (var coursesList in _userCourses.values) {
       final index = coursesList.indexWhere(
@@ -64,6 +68,7 @@ class CourseRepositoryImpl implements CourseRepository {
     return false;
   }
 
+  @override
   Course? getCourse(String id) {
     for (var coursesList in _userCourses.values) {
       try {
@@ -76,6 +81,7 @@ class CourseRepositoryImpl implements CourseRepository {
     return null;
   }
 
+  @override
   Future<bool> enrollUser(String courseId, String userId) async {
     for (var coursesList in _userCourses.values) {
       final index = coursesList.indexWhere((c) => c.id == courseId);
@@ -90,6 +96,7 @@ class CourseRepositoryImpl implements CourseRepository {
     return false;
   }
 
+  @override
   List<Course> getEnrolledCourses(String userId) {
     List<Course> enrolledCourses = [];
 
@@ -103,6 +110,7 @@ class CourseRepositoryImpl implements CourseRepository {
   }
 
   /// Returns how many courses a user is enrolled in across all owners
+  @override
   int countCoursesForUser(String userId) {
     return getEnrolledCourses(userId).length;
   }
