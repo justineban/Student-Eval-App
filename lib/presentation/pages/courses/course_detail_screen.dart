@@ -126,7 +126,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
       // Only the teacher owner can add other users
       if (AuthRepositoryImpl().currentRole != 'teacher' ||
           course.ownerId != current.id) {
-        if (mounted)
+        if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text(
@@ -134,6 +134,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
               ),
             ),
           );
+        }
         return;
       }
 
@@ -149,16 +150,17 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
           setState(() {});
         }
       } else {
-        if (mounted)
+        if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('No se pudo agregar el usuario')),
           );
+        }
       }
     } catch (e) {
-      if (mounted)
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Usuario no encontrado')));
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text('Usuario no encontrado')));
+      }
     }
     _emailController.clear();
   }

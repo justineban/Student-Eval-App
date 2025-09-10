@@ -6,10 +6,13 @@ class CourseRepositoryImpl implements CourseRepository {
   static final CourseRepositoryImpl _instance =
       CourseRepositoryImpl._internal();
   factory CourseRepositoryImpl() => _instance;
-  CourseRepositoryImpl._internal();
+  CourseRepositoryImpl._internal() {
+    seedTestData();
+  }
 
   final Map<String, List<Course>> _userCourses = {};
 
+  @override
   List<Course> get courses {
     final currentUserId = AuthRepositoryImpl().currentUser?.id;
     if (currentUserId == null) return [];
@@ -17,6 +20,7 @@ class CourseRepositoryImpl implements CourseRepository {
   }
 
   /// Returns a list of all courses across all owners.
+  @override
   List<Course> getAllCourses() {
     final all = <Course>[];
     for (var list in _userCourses.values) {
@@ -25,6 +29,7 @@ class CourseRepositoryImpl implements CourseRepository {
     return List.unmodifiable(all);
   }
 
+  @override
   Future<Course> addCourse(String name, String description) async {
     final currentUserId = AuthRepositoryImpl().currentUser?.id;
     if (currentUserId == null) throw Exception('No hay usuario conectado');
@@ -48,6 +53,7 @@ class CourseRepositoryImpl implements CourseRepository {
   }
 
   /// Enroll a user using the course registration code.
+  @override
   Future<bool> enrollByCode(String registrationCode, String userId) async {
     for (var coursesList in _userCourses.values) {
       final index = coursesList.indexWhere(
@@ -64,6 +70,7 @@ class CourseRepositoryImpl implements CourseRepository {
     return false;
   }
 
+  @override
   Course? getCourse(String id) {
     for (var coursesList in _userCourses.values) {
       try {
@@ -76,6 +83,7 @@ class CourseRepositoryImpl implements CourseRepository {
     return null;
   }
 
+  @override
   Future<bool> enrollUser(String courseId, String userId) async {
     for (var coursesList in _userCourses.values) {
       final index = coursesList.indexWhere((c) => c.id == courseId);
@@ -90,6 +98,7 @@ class CourseRepositoryImpl implements CourseRepository {
     return false;
   }
 
+  @override
   List<Course> getEnrolledCourses(String userId) {
     List<Course> enrolledCourses = [];
 
@@ -103,7 +112,25 @@ class CourseRepositoryImpl implements CourseRepository {
   }
 
   /// Returns how many courses a user is enrolled in across all owners
+  @override
   int countCoursesForUser(String userId) {
     return getEnrolledCourses(userId).length;
+  }
+
+  void seedTestData() {
+    final test1 = AuthRepositoryImpl().users.firstWhere((u) => u.email == 'a@a.com');
+    final test2 = AuthRepositoryImpl().users.firstWhere((u) => u.email == 'b@a.com');
+
+    final curso1 = Course(
+      id: 'curso1',
+      name: 'curso1',
+      description: 'Test course 1',
+      ownerId: test1.id,
+      ownerName: test1.name,
+      registrationCode: 'CURSO1CODE',
+    );
+
+    _userCourses[test1.id] = [curso1];
+    curso1.enrolledUserIds.add(test2.id);
   }
 }

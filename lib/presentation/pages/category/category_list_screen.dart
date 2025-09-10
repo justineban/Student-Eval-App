@@ -14,14 +14,14 @@ class CategoryListScreen extends StatefulWidget {
 }
 
 class _CategoryListScreenState extends State<CategoryListScreen> {
-  final _CategoryRepositoryImpl = CategoryRepositoryImpl();
+  final _categoryRepository = CategoryRepositoryImpl();
   final _nameController = TextEditingController();
   final _maxStudentsController = TextEditingController();
   String _selectedGroupingMethod = 'random';
 
   @override
   Widget build(BuildContext context) {
-    final categories = _CategoryRepositoryImpl.getCategoriesForCourse(
+  final categories = _categoryRepository.getCategoriesForCourse(
       widget.courseId,
     );
 
@@ -127,7 +127,7 @@ class _CategoryListScreenState extends State<CategoryListScreen> {
       return;
     }
 
-    await _CategoryRepositoryImpl.addCategory(
+  await _categoryRepository.addCategory(
       widget.courseId,
       _nameController.text,
       _selectedGroupingMethod,
@@ -206,7 +206,7 @@ class _CategoryListScreenState extends State<CategoryListScreen> {
       studentGroups: category.studentGroups,
     );
 
-    _CategoryRepositoryImpl.updateCategory(widget.courseId, updatedCategory);
+  _categoryRepository.updateCategory(widget.courseId, updatedCategory);
 
     setState(() {
       _nameController.clear();
@@ -229,7 +229,7 @@ class _CategoryListScreenState extends State<CategoryListScreen> {
           ),
           TextButton(
             onPressed: () {
-              _CategoryRepositoryImpl.deleteCategory(
+              _categoryRepository.deleteCategory(
                 widget.courseId,
                 category.id,
               );
