@@ -1,16 +1,21 @@
 import 'package:flutter/material.dart';
-import 'screens/auth/login_screen.dart';
-import 'screens/courses/course_list_screen.dart';
-import 'screens/courses/enrolled_courses_screen.dart';
-import 'screens/home/home_screen.dart';
-import 'screens/users/users_list_screen.dart';
-import 'screens/category/category_picker_screen.dart';
-import 'screens/auth/role_selection_screen.dart';
-import 'screens/category/all_groups_screen.dart';
-import 'screens/courses/join_course_screen.dart';
-import 'services/auth_service.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+import 'package:provider/provider.dart';
+import 'data/local/local_repository.dart';
+import 'presentation/screens/login_screen.dart';
+import 'presentation/screens/auth/register_screen.dart';
+import 'presentation/screens/role_selection_screen.dart';
+import 'presentation/screens/teacher/teacher_home_screen.dart';
+import 'presentation/screens/teacher/teacher_courses_screen.dart';
+import 'presentation/screens/student/student_home_screen.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Hive.initFlutter();
+  await LocalRepository.registerAdapters();
+  await LocalRepository.openBoxes();
+  // load any persisted session
+  LocalRepository.instance.loadCurrentUserFromSession();
   runApp(const MyApp());
 }
 
@@ -19,27 +24,23 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Gestión de Cursos',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
-        useMaterial3: true,
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => LocalRepository.instance),
+      ],
+      child: MaterialApp(
+        title: 'Student Eval App',
+        theme: ThemeData(primarySwatch: Colors.blue),
+        home: LocalRepository.instance.currentUser == null ? const LoginScreen() : const RoleSelectionScreen(),
+        routes: {
+          '/login': (_) => const LoginScreen(),
+          '/register': (_) => const RegisterScreen(),
+          '/roles': (_) => const RoleSelectionScreen(),
+          '/teacher/home': (_) => const TeacherHomeScreen(),
+          '/teacher/courses': (_) => const TeacherCoursesScreen(),
+          '/student/home': (_) => const StudentHomeScreen(),
+        },
       ),
-      initialRoute: '/',
-      routes: {
-        '/': (context) => AuthService().currentUser == null
-            ? const LoginScreen()
-            : const HomeScreen(),
-        '/login': (context) => const LoginScreen(),
-        '/home': (context) => const HomeScreen(),
-  '/select-course-for-categories': (context) => const CategoryPickerScreen(),
-  '/select-role': (context) => const RoleSelectionScreen(),
-  '/all-groups': (context) => const AllGroupsScreen(),
-  '/join-course': (context) => const JoinCourseScreen(),
-        '/courses': (context) => const CourseListScreen(),
-        '/enrolled': (context) => const EnrolledCoursesScreen(), // Ruta añadida
-        '/users': (context) => const UsersListScreen(),
-      },
     );
   }
 }

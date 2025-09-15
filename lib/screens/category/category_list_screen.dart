@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../models/category.dart';
 import '../../services/category_service.dart';
-import '../../services/auth_service.dart';
-import 'group_list_screen.dart';
 
 class CategoryListScreen extends StatefulWidget {
   final String courseId;
@@ -25,12 +23,10 @@ class _CategoryListScreenState extends State<CategoryListScreen> {
 
     return Scaffold(
       appBar: AppBar(title: const Text('Categorías')),
-      floatingActionButton: AuthService().currentRole == 'teacher'
-          ? FloatingActionButton(
-              onPressed: () => _showAddCategoryDialog(),
-              child: const Icon(Icons.add),
-            )
-          : null,
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => _showAddCategoryDialog(),
+        child: const Icon(Icons.add),
+      ),
       body: ListView.builder(
         itemCount: categories.length,
         itemBuilder: (context, index) {
@@ -42,27 +38,13 @@ class _CategoryListScreenState extends State<CategoryListScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 IconButton(
-                  icon: const Icon(Icons.group_work),
-                  tooltip: 'Ver Grupos',
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => GroupListScreen(categoryId: category.id),
-                      ),
-                    );
-                  },
+                  icon: const Icon(Icons.edit),
+                  onPressed: () => _showEditCategoryDialog(category),
                 ),
-                if (AuthService().currentRole == 'teacher') ...[
-                  IconButton(
-                    icon: const Icon(Icons.edit),
-                    onPressed: () => _showEditCategoryDialog(category),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.delete),
-                    onPressed: () => _deleteCategory(category),
-                  ),
-                ],
+                IconButton(
+                  icon: const Icon(Icons.delete),
+                  onPressed: () => _deleteCategory(category),
+                ),
               ],
             ),
           );

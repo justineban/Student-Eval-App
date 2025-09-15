@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../services/course_service.dart';
-import '../../services/auth_service.dart';
 
 class AddCourseScreen extends StatefulWidget {
   const AddCourseScreen({super.key});
@@ -16,12 +15,6 @@ class _AddCourseScreenState extends State<AddCourseScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (AuthService().currentRole != 'teacher') {
-      return Scaffold(
-        appBar: AppBar(title: const Text('Agregar Curso')),
-        body: const Center(child: Text('Solo los profesores pueden crear cursos')),
-      );
-    }
     return Scaffold(
       appBar: AppBar(title: const Text('Agregar Curso')),
       body: Padding(
@@ -66,24 +59,13 @@ class _AddCourseScreenState extends State<AddCourseScreen> {
 
   Future<void> _saveCourse() async {
     if (_formKey.currentState!.validate()) {
-      final course = await CourseService().addCourse(
+      await CourseService().addCourse(
         _nameController.text,
         _descriptionController.text,
       );
-      if (!mounted) return;
-      // show registration code
-      await showDialog(
-        context: context,
-        builder: (_) => AlertDialog(
-          title: const Text('Curso creado'),
-          content: Text('Código de registro: ${course.registrationCode}'),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: const Text('OK'))
-          ],
-        ),
-      );
-      if (!mounted) return;
-      Navigator.pop(context);
+      if (mounted) {
+        Navigator.pop(context);
+      }
     }
   }
 

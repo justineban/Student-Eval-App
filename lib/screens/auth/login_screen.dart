@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../services/auth_service.dart';
 import 'register_screen.dart';
+import '../courses/course_list_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -82,7 +83,10 @@ class _LoginScreenState extends State<LoginScreen> {
           _passwordController.text,
         );
         if (mounted) {
-          Navigator.pushReplacementNamed(context, '/select-role');
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => const CourseListScreen()),
+          );
         }
       } catch (e) {
         if (mounted) {

@@ -14,10 +14,7 @@ class CourseListScreen extends StatefulWidget {
 class _CourseListScreenState extends State<CourseListScreen> {
   @override
   Widget build(BuildContext context) {
-  final role = AuthService().currentRole;
-  final courses = role == 'teacher' ? CourseService().courses : CourseService().getAllCourses();
-
-  return Scaffold(
+    return Scaffold(
       appBar: AppBar(
         title: const Text('Cursos'),
         actions: [
@@ -31,9 +28,9 @@ class _CourseListScreenState extends State<CourseListScreen> {
         ],
       ),
       body: ListView.builder(
-        itemCount: courses.length,
+        itemCount: CourseService().courses.length,
         itemBuilder: (context, index) {
-          final course = courses[index];
+          final course = CourseService().courses[index];
           return ListTile(
             title: Text(course.name),
             subtitle: Text(course.description),
@@ -50,18 +47,16 @@ class _CourseListScreenState extends State<CourseListScreen> {
           );
         },
       ),
-      floatingActionButton: role == 'teacher'
-          ? FloatingActionButton(
-              onPressed: () async {
-                await Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const AddCourseScreen()),
-                );
-                setState(() {});
-              },
-              child: const Icon(Icons.add),
-            )
-          : null,
+      floatingActionButton: FloatingActionButton(
+        onPressed: () async {
+          await Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const AddCourseScreen()),
+          );
+          setState(() {});
+        },
+        child: const Icon(Icons.add),
+      ),
     );
   }
 }

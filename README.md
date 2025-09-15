@@ -53,6 +53,27 @@ Teachers can view:
 
 - All functionality can be implemented using **in-memory structures (lists)**, without the need for database persistence.
 
+---
+
+## New scaffold added (Clean Architecture + Hive)
+
+I added a scaffold to start a new implementation of the app using Clean Architecture and local Hive storage. Key points:
+
+- Domain entities: `lib/domain/entities/` (User, Course, Category, Group).
+- Manual Hive adapters: `lib/data/models/adapters.dart` and repository: `lib/data/local/local_repository.dart`.
+- Minimal UI screens: `lib/presentation/screens/` and `lib/main.dart` which initializes Hive.
+
+To try the scaffold:
+
+```powershell
+flutter pub get
+flutter run
+```
+
+The login screen includes a "Crear usuario (para pruebas)" button to create a test user quickly. After creating a user, use "Ingresar" to log in and select a role.
+
+If you'd like, I can now continue by implementing the course and category CRUD UI, enrollment flows, and group-creation logic with random/selection assignment.
+
 
 
 
