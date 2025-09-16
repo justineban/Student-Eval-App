@@ -11,6 +11,7 @@ import 'package:proyecto_movil/features/auth/presentation/pages/role_selection_p
 import 'package:proyecto_movil/features/teacher_view/presentation/pages/teacher_home_page.dart';
 import 'package:proyecto_movil/features/teacher_view/presentation/pages/teacher_courses_page.dart';
 import 'package:proyecto_movil/features/student_view/presentation/pages/student_home_page.dart';
+import 'package:proyecto_movil/features/student_view/presentation/pages/student_courses_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -45,6 +46,7 @@ class MyApp extends StatelessWidget {
           '/teacher/home': (_) => const TeacherHomePage(),
           '/teacher/courses': (_) => const TeacherCoursesPage(),
           '/student/home': (_) => const StudentHomePage(),
+          '/student/courses': (_) => const StudentCoursesPage(),
         },
       ),
     );

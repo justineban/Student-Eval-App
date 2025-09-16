@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:proyecto_movil/features/teacher_view/domain/entities/category.dart';
 import 'package:proyecto_movil/features/teacher_view/data/category_service.dart';
+import 'package:proyecto_movil/features/teacher_view/presentation/pages/teacher_group_list_page.dart';
 
 class CategoryListPage extends StatefulWidget {
 	final String courseId;
@@ -23,7 +24,9 @@ class _CategoryListPageState extends State<CategoryListPage> {
 		return Scaffold(
 			appBar: AppBar(title: const Text('Categorías')),
 			floatingActionButton: FloatingActionButton(
-				onPressed: () => _showAddCategoryDialog(),
+				onPressed: () {
+					_showAddCategoryDialog();
+				},
 				child: const Icon(Icons.add),
 			),
 			body: ListView.builder(
@@ -43,6 +46,14 @@ class _CategoryListPageState extends State<CategoryListPage> {
 								IconButton(
 									icon: const Icon(Icons.delete),
 									onPressed: () => _deleteCategory(category),
+								),
+								// Botón para ver grupos en la categoría
+								IconButton(
+									icon: const Icon(Icons.group),
+									onPressed: () {
+									Navigator.push(context, MaterialPageRoute(builder: (_) =>
+										TeacherGroupListPage(categoryId: category.id)));
+								},
 								),
 							],
 						),
@@ -76,46 +87,38 @@ class _CategoryListPageState extends State<CategoryListPage> {
 						),
 						TextField(
 							controller: _maxStudentsController,
-							decoration: const InputDecoration(
-								labelText: 'Máximo de estudiantes por grupo',
-							),
+							decoration: const InputDecoration(labelText: 'Máximo de estudiantes por grupo'),
 							keyboardType: TextInputType.number,
 						),
 					],
 				),
 				actions: [
 					TextButton(
-						onPressed: () => Navigator.pop(context),
-						child: const Text('Cancelar'),
+						onPressed: () => Navigator.pop(context), 
+						child: const Text('Cancelar')
 					),
 					TextButton(
-						onPressed: () {
-							_addCategory();
-							Navigator.pop(context);
+						// Updated to avoid using BuildContext across async gap
+						onPressed: () async {
+							if (_nameController.text.isEmpty || _maxStudentsController.text.isEmpty) return;
+							final navigator = Navigator.of(context);
+							await _categoryService.addCategory(
+								widget.courseId,
+								_nameController.text,
+								_selectedGroupingMethod == 'random',
+								int.parse(_maxStudentsController.text),
+							);
+							setState(() {
+								_nameController.clear();
+								_maxStudentsController.clear();
+							});
+							navigator.pop();
 						},
 						child: const Text('Guardar'),
 					),
 				],
 			),
 		);
-	}
-
-	void _addCategory() async {
-		if (_nameController.text.isEmpty || _maxStudentsController.text.isEmpty) {
-			return;
-		}
-
-		await _categoryService.addCategory(
-			widget.courseId,
-			_nameController.text,
-			_selectedGroupingMethod == 'random',
-			int.parse(_maxStudentsController.text),
-		);
-
-		setState(() {
-			_nameController.clear();
-			_maxStudentsController.clear();
-		});
 	}
 
 	void _showEditCategoryDialog(Category category) {

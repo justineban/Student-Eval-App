@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:proyecto_movil/features/core/data/local/local_repository.dart';
 import 'package:proyecto_movil/features/teacher_view/domain/entities/course.dart';
 import 'package:uuid/uuid.dart';
+import 'package:proyecto_movil/features/teacher_view/presentation/pages/course_detail_page.dart';
 
 class CreateCoursePage extends StatefulWidget {
   const CreateCoursePage({super.key});
@@ -43,7 +44,8 @@ class _CreateCoursePageState extends State<CreateCoursePage> {
               final course = Course(id: id, name: _title.text.trim(), description: _desc.text.trim(), teacherId: user.id, registrationCode: code);
               await repo.createCourse(course);
               if (!mounted) return;
-              navigator.pop();
+              // Navigate to details of the newly created course
+              navigator.pushReplacement(MaterialPageRoute(builder: (_) => CourseDetailPage(courseId: course.id)));
             }, child: const Text('Crear')),
           ],
         ),
