@@ -1,1 +1,0 @@
-This folder will contain shared entity models (migrated from lib/models and lib/domain/entities).
