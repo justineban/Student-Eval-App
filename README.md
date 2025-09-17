@@ -70,9 +70,7 @@ flutter pub get
 flutter run
 ```
 
-The login screen includes a "Crear usuario (para pruebas)" button to create a test user quickly. After creating a user, use "Ingresar" to log in and select a role.
-
-If you'd like, I can now continue by implementing the course and category CRUD UI, enrollment flows, and group-creation logic with random/selection assignment.
+The login screen includes a "Crear usuario (para pruebas)" button to create a test user quickly. After creating a user, use "Ingresar" to log in.
 
 
 
