@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:provider/provider.dart';
-import 'data/local/local_repository.dart';
-import 'presentation/screens/login_screen.dart';
-import 'presentation/screens/auth/register_screen.dart';
-import 'presentation/screens/role_selection_screen.dart';
-import 'presentation/screens/teacher/teacher_home_screen.dart';
-import 'presentation/screens/teacher/teacher_courses_screen.dart';
-import 'presentation/screens/student/student_home_screen.dart';
+import 'core/utils/local_repository.dart';
+import 'features/auth/presentation/login_screen.dart';
+import 'features/auth/presentation/register_screen.dart';
+
+import 'features/home/presentation/home_screen.dart';
+import 'features/groups/presentation/groups_list_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -31,14 +30,15 @@ class MyApp extends StatelessWidget {
       child: MaterialApp(
         title: 'Student Eval App',
         theme: ThemeData(primarySwatch: Colors.blue),
-        home: LocalRepository.instance.currentUser == null ? const LoginScreen() : const RoleSelectionScreen(),
+  home: LocalRepository.instance.currentUser == null ? const LoginScreen() : const HomeScreen(),
         routes: {
           '/login': (_) => const LoginScreen(),
           '/register': (_) => const RegisterScreen(),
-          '/roles': (_) => const RoleSelectionScreen(),
-          '/teacher/home': (_) => const TeacherHomeScreen(),
-          '/teacher/courses': (_) => const TeacherCoursesScreen(),
-          '/student/home': (_) => const StudentHomeScreen(),
+          '/home': (_) => const HomeScreen(),
+          '/groups': (context) {
+            final categoryId = ModalRoute.of(context)!.settings.arguments as String;
+            return GroupsListScreen(categoryId: categoryId);
+          },
         },
       ),
     );

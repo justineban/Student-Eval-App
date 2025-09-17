@@ -1,0 +1,1 @@
+Common interfaces for the app.
