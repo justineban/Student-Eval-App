@@ -7,6 +7,8 @@ import '../entities/group.dart';
 import '../entities/adapters.dart';
 
 class LocalRepository extends ChangeNotifier {
+  // Getter público para obtener todos los usuarios
+  List<User> get users => usersBox.values.toList();
 
   Future<void> moveStudentToGroup({required String userId, required String fromGroupId, required String toGroupId}) async {
     final fromGroup = groupsBox.get(fromGroupId);

@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+
 import '../../../core/entities/user.dart';
 
 class AuthService {
@@ -5,10 +7,13 @@ class AuthService {
   factory AuthService() => _instance;
   AuthService._internal();
 
+
   User? _currentUser;
   final List<User> _users = [];
 
   User? get currentUser => _currentUser;
+  set currentUser(User? user) => _currentUser = user;
+  List<User> get users => _users;
 
   Future<bool> login(String email, String password) async {
     try {
@@ -35,6 +40,7 @@ class AuthService {
     );
 
     _users.add(user);
+    debugPrint('Usuario registrado: $email');
     return true;
   }
 

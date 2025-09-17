@@ -1,3 +1,5 @@
+import 'package:flutter/widgets.dart';
+
 import '../../../core/entities/course.dart';
 import '../../auth/data/auth_service.dart';
 
@@ -28,6 +30,7 @@ class CourseService {
 
     _userCourses[currentUserId] ??= [];
     _userCourses[currentUserId]!.add(course);
+    debugPrint('Curso creado: ${course.name} con ID: ${course.id}');
 
     return course;
   }
