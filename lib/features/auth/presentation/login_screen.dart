@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:proyecto_movil/core/utils/local_repository.dart';
-import 'package:proyecto_movil/core/entities/user.dart';
-import 'package:uuid/uuid.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -12,6 +10,71 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
+  Future<void> _showRegisterDialog() async {
+    final repo = Provider.of<LocalRepository>(context, listen: false);
+    final nameController = TextEditingController();
+    final emailController = TextEditingController();
+    final passwordController = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+    await showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Registro de usuario'),
+          content: Form(
+            key: formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextFormField(
+                  controller: nameController,
+                  decoration: const InputDecoration(labelText: 'Nombre'),
+                  validator: (v) => v == null || v.trim().isEmpty ? 'Ingrese su nombre' : null,
+                ),
+                TextFormField(
+                  controller: emailController,
+                  decoration: const InputDecoration(labelText: 'Email'),
+                  validator: (v) => v == null || v.trim().isEmpty ? 'Ingrese su email' : null,
+                ),
+                TextFormField(
+                  controller: passwordController,
+                  decoration: const InputDecoration(labelText: 'Password'),
+                  obscureText: true,
+                  validator: (v) => v == null || v.trim().isEmpty ? 'Ingrese su contraseña' : null,
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancelar'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                if (!formKey.currentState!.validate()) return;
+                final messenger = ScaffoldMessenger.of(context);
+                final navigator = Navigator.of(context);
+                final user = await repo.register(
+                  emailController.text.trim(),
+                  passwordController.text.trim(),
+                  nameController.text.trim(),
+                );
+                if (user == null) {
+                  messenger.showSnackBar(const SnackBar(content: Text('Email ya registrado')));
+                  return;
+                }
+                await repo.persistSession(user);
+                if (!mounted) return;
+                navigator.pushReplacementNamed('/home');
+              },
+              child: const Text('Registrar'),
+            ),
+          ],
+        );
+      },
+    );
+  }
   final _email = TextEditingController();
   final _password = TextEditingController();
 
@@ -46,16 +109,8 @@ class _LoginScreenState extends State<LoginScreen> {
               child: const Text('Ingresar'),
             ),
             TextButton(
-              onPressed: () async {
-                // Crear usuario de prueba
-                final messenger = ScaffoldMessenger.of(context);
-                final id = const Uuid().v4();
-                final user = User(id: id, email: _email.text.trim().isEmpty ? 'test@example.com' : _email.text.trim(), password: _password.text.trim().isEmpty ? 'password' : _password.text.trim(), name: 'Usuario de prueba');
-                await repo.createUser(user);
-                if (!mounted) return;
-                messenger.showSnackBar(const SnackBar(content: Text('Usuario creado. Ahora presione Ingresar')));
-              },
-              child: const Text('Crear usuario (para pruebas)'),
+              onPressed: _showRegisterDialog,
+              child: const Text('Registrar usuario'),
             )
           ],
         ),
