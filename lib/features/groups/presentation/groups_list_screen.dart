@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:proyecto_movil/core/utils/local_repository.dart';
 import 'package:proyecto_movil/core/entities/user.dart';
 import 'package:proyecto_movil/core/entities/group.dart';
+import 'package:proyecto_movil/core/widgets/top_bar.dart';
 
 class GroupsListScreen extends StatefulWidget {
   final String categoryId;
@@ -65,9 +66,7 @@ class _GroupsListScreenState extends State<GroupsListScreen> {
       }
     }
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Grupos'),
-      ),
+    appBar: const TopBar(title: 'Grupos'),
       body: RefreshIndicator(
         onRefresh: _regenerateGroups,
         child: ListView.builder(

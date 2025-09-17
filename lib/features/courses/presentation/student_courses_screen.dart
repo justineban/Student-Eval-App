@@ -16,7 +16,7 @@ class StudentCoursesScreen extends StatelessWidget {
     if (user == null) return const Scaffold(body: Center(child: Text('No user')));
     final myCourses = repo.coursesBox.values.where((c) => c.studentIds.contains(user.id)).toList();
     return Scaffold(
-  appBar: TopBar(roleName: 'Estudiante', title: 'Mis Cursos'),
+    appBar: const TopBar(title: 'Mis Cursos'),
       body: ListView.builder(
         itemCount: myCourses.length,
         itemBuilder: (context, index) {

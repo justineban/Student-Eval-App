@@ -26,7 +26,7 @@ class _EnrollByCodeScreenState extends State<EnrollByCodeScreen> {
     final repo = Provider.of<LocalRepository>(context);
     final user = repo.currentUser;
     return Scaffold(
-      appBar: TopBar(roleName: 'Estudiante', title: 'Ingresar por código'),
+    appBar: const TopBar(title: 'Ingresar por código'),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(

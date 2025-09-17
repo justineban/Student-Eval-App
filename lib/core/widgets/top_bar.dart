@@ -2,23 +2,25 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../utils/local_repository.dart';
 
+
 class TopBar extends StatelessWidget implements PreferredSizeWidget {
-  final String roleName;
   final String? title;
 
-  const TopBar({super.key, required this.roleName, this.title});
+  const TopBar({super.key, this.title});
 
   @override
   Widget build(BuildContext context) {
     final repo = Provider.of<LocalRepository>(context, listen: false);
     return AppBar(
+      // Default leading (back button) is restored by not specifying leading
       title: Text(title ?? ''),
       actions: [
-        Center(child: Padding(padding: const EdgeInsets.symmetric(horizontal: 8.0), child: Text('Rol: $roleName'))),
         IconButton(
-          tooltip: 'Cambiar rol',
-          icon: const Icon(Icons.swap_horiz),
-          onPressed: () => Navigator.pushNamed(context, '/roles'),
+          tooltip: 'Inicio',
+          icon: const Icon(Icons.home),
+          onPressed: () {
+            Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
+          },
         ),
         IconButton(
           tooltip: 'Cerrar sesión',

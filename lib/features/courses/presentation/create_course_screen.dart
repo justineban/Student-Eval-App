@@ -29,7 +29,7 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
     final repo = Provider.of<LocalRepository>(context);
     final user = repo.currentUser;
     return Scaffold(
-      appBar: const TopBar(roleName: 'Docente', title: 'Crear Curso'),
+    appBar: const TopBar(title: 'Crear Curso'),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(

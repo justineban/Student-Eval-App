@@ -12,7 +12,7 @@ class TeacherHomeScreen extends StatelessWidget {
     final repo = Provider.of<LocalRepository>(context);
     final user = repo.currentUser;
     return Scaffold(
-      appBar: TopBar(roleName: 'Docente', title: 'Home - Docente'),
+    appBar: const TopBar(title: 'Home - Docente'),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(

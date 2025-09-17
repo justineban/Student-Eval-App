@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:proyecto_movil/core/utils/local_repository.dart';
 import 'package:proyecto_movil/core/entities/category.dart';
 import 'package:uuid/uuid.dart';
+import 'package:proyecto_movil/core/widgets/top_bar.dart';
 
 class CreateCategoryScreen extends StatefulWidget {
   final String courseId;
@@ -28,7 +29,7 @@ class _CreateCategoryScreenState extends State<CreateCategoryScreen> {
   Widget build(BuildContext context) {
     final repo = Provider.of<LocalRepository>(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('Crear Categoría')),
+    appBar: const TopBar(title: 'Crear Categoría'),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(

@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:proyecto_movil/core/utils/local_repository.dart';
 import 'package:proyecto_movil/core/widgets/top_bar.dart';
 import 'package:proyecto_movil/features/courses/presentation/create_course_screen.dart';
 import 'package:proyecto_movil/features/courses/presentation/teacher_courses_screen.dart';
@@ -12,10 +10,8 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final repo = Provider.of<LocalRepository>(context);
-    final user = repo.currentUser;
-    return Scaffold(
-      appBar: TopBar(roleName: user != null && user.email.endsWith('@teacher.com') ? 'Docente' : 'Estudiante', title: 'Home'),
+  return Scaffold(
+    appBar: const TopBar(title: 'Home'),
       body: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,

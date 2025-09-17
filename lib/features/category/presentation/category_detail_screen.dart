@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:proyecto_movil/core/utils/local_repository.dart';
+import 'package:proyecto_movil/core/widgets/top_bar.dart';
 
 class CategoryDetailScreen extends StatelessWidget {
   final String categoryId;
@@ -14,7 +15,7 @@ class CategoryDetailScreen extends StatelessWidget {
     final groups = repo.groupsBox.values.where((g) => g.categoryId == categoryId).toList();
 
     return Scaffold(
-      appBar: AppBar(title: Text(cat.name)),
+    appBar: TopBar(title: cat.name),
       body: ListView.builder(
         itemCount: groups.length,
         itemBuilder: (context, index) {

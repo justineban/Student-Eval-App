@@ -15,7 +15,7 @@ class TeacherCoursesScreen extends StatelessWidget {
     final myCourses = repo.coursesBox.values.where((c) => c.teacherId == user?.id).toList();
 
     return Scaffold(
-      appBar: const TopBar(roleName: 'Docente', title: 'Mis Cursos'),
+    appBar: const TopBar(title: 'Mis Cursos'),
       body: ListView.builder(
         itemCount: myCourses.length,
         itemBuilder: (context, index) {

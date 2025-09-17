@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:proyecto_movil/core/utils/local_repository.dart';
 import 'package:proyecto_movil/core/entities/category.dart';
+import 'package:proyecto_movil/core/widgets/top_bar.dart';
 
 class CategoriesListScreen extends StatefulWidget {
   final String courseId;
@@ -22,7 +23,7 @@ class _CategoriesListScreenState extends State<CategoriesListScreen> {
     final categories = repo.categoriesBox.values.where((c) => c.courseId == widget.courseId).toList();
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Categorías')),
+    appBar: const TopBar(title: 'Categorías'),
       body: ListView.builder(
         itemCount: categories.length,
         itemBuilder: (context, index) {
