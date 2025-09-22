@@ -7,20 +7,19 @@ class AuthService {
   factory AuthService() => _instance;
   AuthService._internal();
 
-
-  User? _currentUser;
+  // Public field is sufficient; no additional logic in accessor/mutator.
+  User? currentUser;
   final List<User> _users = [];
 
-  User? get currentUser => _currentUser;
-  set currentUser(User? user) => _currentUser = user;
-  List<User> get users => _users;
+  // Expose an unmodifiable view to prevent external mutation of internal list.
+  List<User> get users => List.unmodifiable(_users);
 
   Future<bool> login(String email, String password) async {
     try {
       final user = _users.firstWhere(
         (user) => user.email == email && user.password == password,
       );
-      _currentUser = user;
+      currentUser = user;
       return true;
     } catch (e) {
       throw Exception('Usuario o contraseña incorrectos');
@@ -45,6 +44,6 @@ class AuthService {
   }
 
   void logout() {
-    _currentUser = null;
+    currentUser = null;
   }
 }

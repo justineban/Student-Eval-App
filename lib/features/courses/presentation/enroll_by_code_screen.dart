@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:proyecto_movil/core/utils/local_repository.dart';
+import 'package:get/get.dart';
 import 'package:proyecto_movil/core/widgets/top_bar.dart';
 import 'package:proyecto_movil/features/courses/presentation/course_detail_screen.dart';
-import 'package:proyecto_movil/core/entities/course.dart';
+import 'package:proyecto_movil/core/entities/course.dart' as legacy;
+import 'controllers/student_courses_controller.dart';
+import '../../auth/presentation/controllers/auth_controller.dart';
 
 class EnrollByCodeScreen extends StatefulWidget {
   const EnrollByCodeScreen({super.key});
@@ -23,8 +24,9 @@ class _EnrollByCodeScreenState extends State<EnrollByCodeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final repo = Provider.of<LocalRepository>(context);
-    final user = repo.currentUser;
+  final controller = Get.find<StudentCoursesController>();
+  final auth = Get.find<AuthController>();
+  final userId = auth.currentUserId.value;
     return Scaffold(
     appBar: const TopBar(title: 'Ingresar por código'),
       body: Padding(
@@ -35,28 +37,23 @@ class _EnrollByCodeScreenState extends State<EnrollByCodeScreen> {
             const SizedBox(height: 12),
             ElevatedButton(
               onPressed: () async {
-                if (user == null) return;
+                if (userId == null) return;
                 final messenger = ScaffoldMessenger.of(context);
                 final navigator = Navigator.of(context);
                 final code = _codeCtrl.text.trim();
-                Course? courseByCode;
-                try {
-                  courseByCode = repo.coursesBox.values.firstWhere((c) => c.registrationCode == code);
-                } catch (_) {
-                  courseByCode = null;
-                }
-                if (courseByCode != null && courseByCode.teacherId == user.id) {
-                  messenger.showSnackBar(const SnackBar(content: Text('Usted es el docente de este curso')));
-                  return;
-                }
-                if (courseByCode != null && courseByCode.studentIds.contains(user.id)) {
-                  messenger.showSnackBar(const SnackBar(content: Text('Ya se encuentra inscrito a este curso')));
-                  return;
-                }
-                final course = await repo.enrollByCode(code, user.id);
-                messenger.showSnackBar(SnackBar(content: Text(course != null ? 'Inscrito correctamente' : 'Código inválido')));
-                if (course != null) {
-                  navigator.pushReplacement(MaterialPageRoute(builder: (_) => CourseDetailScreen(course: course)));
+                final courseEntity = await controller.enroll(code);
+                messenger.showSnackBar(SnackBar(content: Text(courseEntity != null ? 'Inscrito correctamente' : 'Código inválido')));
+                if (courseEntity != null) {
+                  final legacyCourse = legacy.Course(
+                    id: courseEntity.id,
+                    name: courseEntity.name,
+                    description: courseEntity.description,
+                    teacherId: courseEntity.teacherId,
+                    registrationCode: courseEntity.registrationCode,
+                    studentIds: courseEntity.studentIds,
+                    invitations: courseEntity.invitations,
+                  );
+                  navigator.pushReplacement(MaterialPageRoute(builder: (_) => CourseDetailScreen(course: legacyCourse)));
                 }
               },
               child: const Text('Ingresar'),

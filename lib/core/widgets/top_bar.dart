@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../utils/local_repository.dart';
+import 'package:get/get.dart';
+import 'package:proyecto_movil/features/auth/presentation/controllers/auth_controller.dart';
 
 
 class TopBar extends StatelessWidget implements PreferredSizeWidget {
@@ -10,7 +10,7 @@ class TopBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
-    final repo = Provider.of<LocalRepository>(context, listen: false);
+  final auth = Get.isRegistered<AuthController>() ? Get.find<AuthController>() : null;
     return AppBar(
       // Default leading (back button) is restored by not specifying leading
       title: Text(title ?? ''),
@@ -22,15 +22,17 @@ class TopBar extends StatelessWidget implements PreferredSizeWidget {
             Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
           },
         ),
-        IconButton(
-          tooltip: 'Cerrar sesión',
-          icon: const Icon(Icons.logout),
-          onPressed: () async {
-            final navigator = Navigator.of(context);
-            await repo.logout();
-            navigator.pushReplacementNamed('/login');
-          },
-        ),
+        if (auth != null && auth.isLoggedIn)
+          IconButton(
+            tooltip: 'Cerrar sesión',
+            icon: const Icon(Icons.logout),
+            onPressed: () async {
+              await auth.logoutUser();
+              if (context.mounted) {
+                Navigator.pushReplacementNamed(context, '/login');
+              }
+            },
+          ),
       ],
     );
   }
