@@ -34,6 +34,16 @@ class AuthRepositoryImpl implements AuthRepository {
     return remoteUser; // null if not found
   }
 
+  /// Attempt to restore a previously persisted session user.
+  Future<UserModel?> restoreSession() async {
+    if (_cached != null) return _cached;
+    final storedId = await local.readSessionUserId();
+    if (storedId == null) return null;
+    final user = await local.fetchUserById(storedId);
+    _cached = user;
+    return user;
+  }
+
   @override
   Future<UserModel?> register({required String name, required String email, required String password}) async {
     final existing = await local.fetchUserByEmail(email);

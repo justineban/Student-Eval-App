@@ -7,5 +7,7 @@ Future<void> initHive() async {
   await Future.wait([
     Hive.openBox(HiveBoxes.users),
     Hive.openBox(HiveBoxes.session),
+    Hive.openBox(HiveBoxes.courses),
+    Hive.openBox(HiveBoxes.teacherCourses),
   ]);
 }

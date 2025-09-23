@@ -1,13 +1,12 @@
-library auth_local_datasource;
-
-/// Local (Hive/SQL) data source stub for authentication.
-/// In-memory + Hive implementations.
+/// Local (Hive/SQL) data source for authentication.
+/// Provides both in-memory and Hive-backed implementations.
 import 'package:hive/hive.dart';
 import '../../../../core/storage/hive_boxes.dart';
 import '../../domain/models/user_model.dart';
 
 abstract class AuthLocalDataSource {
   Future<UserModel?> fetchUserByEmail(String email);
+  Future<UserModel?> fetchUserById(String id);
   Future<UserModel> saveUser(UserModel user);
   Future<void> persistSessionUserId(String userId);
   Future<String?> readSessionUserId();
@@ -16,14 +15,19 @@ abstract class AuthLocalDataSource {
 
 class InMemoryAuthLocalDataSource implements AuthLocalDataSource {
   final Map<String, UserModel> _users = {}; // key email
+  final Map<String, UserModel> _usersById = {}; // key id
   String? _sessionUserId;
 
   @override
   Future<UserModel?> fetchUserByEmail(String email) async => _users[email];
 
   @override
+  Future<UserModel?> fetchUserById(String id) async => _usersById[id];
+
+  @override
   Future<UserModel> saveUser(UserModel user) async {
     _users[user.email] = user;
+    _usersById[user.id] = user;
     return user;
   }
 
@@ -62,6 +66,13 @@ class HiveAuthLocalDataSource implements AuthLocalDataSource {
         return _mapToUser(data);
       }
     }
+    return null;
+  }
+
+  @override
+  Future<UserModel?> fetchUserById(String id) async {
+    final data = _usersBox.get(id);
+    if (data is Map) return _mapToUser(data);
     return null;
   }
 
