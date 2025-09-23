@@ -8,6 +8,7 @@ import '../../../courses/data/repositories/course_repository_impl.dart';
 import '../../../courses/domain/repositories/course_repository.dart';
 import '../../../courses/domain/use_cases/create_course_use_case.dart';
 import '../../../courses/domain/use_cases/get_teacher_courses_use_case.dart';
+import '../../../courses/domain/use_cases/invite_student_use_case.dart';
 import '../../../courses/ui/controllers/course_controller.dart';
 import '../../domain/use_cases/login_use_case.dart';
 import '../../domain/use_cases/register_use_case.dart';
@@ -52,9 +53,11 @@ class AuthBinding extends Bindings {
     }, fenix: true);
     Get.lazyPut(() => CreateCourseUseCase(Get.find<CourseRepository>()), fenix: true);
     Get.lazyPut(() => GetTeacherCoursesUseCase(Get.find<CourseRepository>()), fenix: true);
+    Get.lazyPut(() => InviteStudentUseCase(Get.find<CourseRepository>()), fenix: true);
     Get.put(CourseController(
       createCourseUseCase: Get.find(),
       getTeacherCoursesUseCase: Get.find(),
+      inviteStudentUseCase: Get.find(),
     ), permanent: true);
   }
 }

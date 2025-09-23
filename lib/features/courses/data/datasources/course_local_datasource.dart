@@ -5,6 +5,8 @@ import '../../domain/models/course_model.dart';
 abstract class CourseLocalDataSource {
   Future<CourseModel> saveCourse(CourseModel course);
   Future<List<CourseModel>> fetchCoursesByTeacher(String teacherId);
+  Future<CourseModel?> fetchCourseById(String id);
+  Future<CourseModel> updateCourse(CourseModel course);
 }
 
 class InMemoryCourseLocalDataSource implements CourseLocalDataSource {
@@ -19,6 +21,24 @@ class InMemoryCourseLocalDataSource implements CourseLocalDataSource {
   @override
   Future<List<CourseModel>> fetchCoursesByTeacher(String teacherId) async {
     return _courses.where((c) => c.teacherId == teacherId).toList();
+  }
+
+  @override
+  Future<CourseModel?> fetchCourseById(String id) async {
+    try {
+      return _courses.firstWhere((c) => c.id == id);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  @override
+  Future<CourseModel> updateCourse(CourseModel course) async {
+    final index = _courses.indexWhere((c) => c.id == course.id);
+    if (index != -1) {
+      _courses[index] = course;
+    }
+    return course;
   }
 }
 
@@ -54,6 +74,19 @@ class HiveCourseLocalDataSource implements CourseLocalDataSource {
       }
     }
     return result;
+  }
+
+  @override
+  Future<CourseModel?> fetchCourseById(String id) async {
+    final data = _coursesBox.get(id);
+    if (data is Map) return _fromMap(data);
+    return null;
+  }
+
+  @override
+  Future<CourseModel> updateCourse(CourseModel course) async {
+    await _coursesBox.put(course.id, _toMap(course));
+    return course;
   }
 
   Map<String, dynamic> _toMap(CourseModel c) => {

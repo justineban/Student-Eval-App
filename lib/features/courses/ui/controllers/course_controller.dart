@@ -2,15 +2,36 @@ import 'package:get/get.dart';
 import '../../domain/models/course_model.dart';
 import '../../domain/use_cases/create_course_use_case.dart';
 import '../../domain/use_cases/get_teacher_courses_use_case.dart';
+import '../../domain/use_cases/invite_student_use_case.dart';
 
 class CourseController extends GetxController {
   final CreateCourseUseCase createCourseUseCase;
   final GetTeacherCoursesUseCase getTeacherCoursesUseCase;
-  CourseController({required this.createCourseUseCase, required this.getTeacherCoursesUseCase});
+  final InviteStudentUseCase inviteStudentUseCase;
+  CourseController({required this.createCourseUseCase, required this.getTeacherCoursesUseCase, required this.inviteStudentUseCase});
 
   final loading = false.obs;
   final courses = <CourseModel>[].obs;
   final error = RxnString();
+  final inviteLoading = false.obs;
+  final inviteError = RxnString();
+
+  Future<void> inviteStudent({required String courseId, required String teacherId, required String email}) async {
+    inviteLoading.value = true;
+    inviteError.value = null;
+    try {
+      final updated = await inviteStudentUseCase(courseId: courseId, teacherId: teacherId, email: email);
+      final idx = courses.indexWhere((c) => c.id == updated.id);
+      if (idx != -1) {
+        courses[idx] = updated;
+        courses.refresh();
+      }
+    } catch (e) {
+      inviteError.value = 'No se pudo invitar';
+    } finally {
+      inviteLoading.value = false;
+    }
+  }
 
   Future<void> loadTeacherCourses(String teacherId) async {
     loading.value = true;

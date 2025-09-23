@@ -32,6 +32,32 @@ class CourseRepositoryImpl implements CourseRepository {
     return localList;
   }
 
+  @override
+  Future<CourseModel?> getCourseById(String id) async {
+    return await local.fetchCourseById(id);
+  }
+
+  @override
+  Future<CourseModel> inviteStudent({required String courseId, required String teacherId, required String email}) async {
+    final course = await local.fetchCourseById(courseId);
+    if (course == null) {
+      throw Exception('Curso no encontrado');
+    }
+    if (course.teacherId != teacherId) {
+      throw Exception('No autorizado');
+    }
+    if (email.trim().isEmpty) {
+      throw Exception('Email requerido');
+    }
+    // evitar duplicados
+    if (!course.invitations.contains(email)) {
+      course.invitations.add(email);
+      await local.updateCourse(course);
+      // TODO: remote sync invitation
+    }
+    return course;
+  }
+
   String _generateRegistrationCode() {
     return _uuid.v1().substring(0, 6).toUpperCase();
   }

@@ -52,7 +52,7 @@ class _CourseListPageState extends State<CourseListPage> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => CourseDetailPageVisual(course: course),
+                      builder: (_) => CourseDetailPage(course: course),
                     ),
                   );
                 },
