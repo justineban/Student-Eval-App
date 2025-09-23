@@ -5,7 +5,7 @@ import 'package:provider/provider.dart';
 import 'core/utils/local_repository.dart';
 import 'core/entities/course.dart';
 import 'features/auth/presentation/login_screen.dart';
-import 'features/auth/presentation/register_screen.dart';git log --oneline -n 3
+import 'features/auth/presentation/register_screen.dart';
 import 'features/home/presentation/home_screen.dart';
 import 'features/groups/presentation/groups_list_screen.dart';
 
