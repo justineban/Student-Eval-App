@@ -25,4 +25,13 @@ class CategoryRepositoryImpl implements CategoryRepository {
 
   @override
   Future<CategoryModel?> getCategory(String id) => local.fetchById(id);
+
+  @override
+  Future<CategoryModel> updateCategory(CategoryModel category) async {
+    // Persist updated fields via save
+    return await local.save(category);
+  }
+
+  @override
+  Future<void> deleteCategory(String id) => local.delete(id);
 }

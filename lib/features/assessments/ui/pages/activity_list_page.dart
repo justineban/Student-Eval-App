@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../../assessments/ui/controllers/activity_controller.dart';
-import '../../../assessments/ui/controllers/category_controller.dart';
-import '../controllers/course_controller.dart';
+import '../controllers/activity_controller.dart';
+import '../controllers/category_controller.dart';
+import '../../../courses/ui/controllers/course_controller.dart';
 
 class ActivityListPage extends StatefulWidget {
   const ActivityListPage({super.key});
@@ -19,31 +19,40 @@ class _ActivityListPageState extends State<ActivityListPage> {
   @override
   void initState() {
     super.initState();
-    // Fallback: si no fueron registrados por AuthBinding (hot reload o ingreso directo), registrarlos aquí.
     if (!Get.isRegistered<ActivityController>()) {
-      try {
-        _activityController = Get.put(ActivityController(createActivityUseCase: Get.find(), getActivitiesUseCase: Get.find()), permanent: true);
-      } catch (_) {
-        // Marcamos un controlador "fantasma" para evitar null; volverá a lanzar al usarlo.
-        throw Exception('Dependencias de ActivityController no registradas (CreateActivityUseCase/GetActivitiesUseCase). Asegure AuthBinding en main.');
-      }
+      _activityController = Get.put(
+        ActivityController(
+          createActivityUseCase: Get.find(),
+          getActivitiesUseCase: Get.find(),
+        ),
+        permanent: true,
+      );
     } else {
       _activityController = Get.find<ActivityController>();
     }
     if (!Get.isRegistered<CategoryController>()) {
-      try {
-        _categoryController = Get.put(CategoryController(createCategoryUseCase: Get.find(), getCategoriesUseCase: Get.find()), permanent: true);
-      } catch (_) {
-        throw Exception('Dependencias de CategoryController no registradas (CreateCategoryUseCase/GetCategoriesUseCase).');
-      }
+      _categoryController = Get.put(
+        CategoryController(
+          createCategoryUseCase: Get.find(),
+          getCategoriesUseCase: Get.find(),
+          updateCategoryUseCase: Get.find(),
+          deleteCategoryUseCase: Get.find(),
+        ),
+        permanent: true,
+      );
     } else {
       _categoryController = Get.find<CategoryController>();
     }
-    final coursesController = Get.isRegistered<CourseController>() ? Get.find<CourseController>() : null;
-    _courseId = coursesController?.courses.isNotEmpty == true ? coursesController!.courses.first.id : null;
+    final args = Get.arguments;
+    if (args is Map && args['courseId'] is String) {
+      _courseId = args['courseId'] as String;
+    } else {
+      final coursesController = Get.isRegistered<CourseController>() ? Get.find<CourseController>() : null;
+      _courseId = coursesController?.courses.isNotEmpty == true ? coursesController!.courses.first.id : null;
+    }
     if (_courseId != null) {
       _activityController.load(_courseId!);
-      _categoryController.load(_courseId!); // asegurar categorías cargadas
+      _categoryController.load(_courseId!);
     }
   }
 
@@ -87,8 +96,10 @@ class _ActivityListPageState extends State<ActivityListPage> {
               children: [
                 const Text('Nueva Actividad', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 12),
-                Obx(() => DropdownButtonFormField<String>(
-                      value: selectedCategory.value,
+        Obx(() => DropdownButtonFormField<String>(
+          // 'value' deprecated: use initialValue if possible when building inside a Form field creation
+          // However DropdownButtonFormField still uses 'value'; to silence lint we keep but ignore warning or adapt:
+          value: selectedCategory.value,
                       items: _categoryController.categories
                           .map((c) => DropdownMenuItem(value: c.id, child: Text(c.name)))
                           .toList(),

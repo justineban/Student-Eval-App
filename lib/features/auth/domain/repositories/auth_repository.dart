@@ -1,6 +1,6 @@
-library auth_repository_interface;
+// Removed unnecessary library name per analyzer suggestion.
 
-/// Auth repository abstraction for the auth feature module.
+// Auth repository abstraction for the auth feature module.
 import '../models/user_model.dart';
 
 abstract class AuthRepository {

@@ -1,7 +1,7 @@
-library auth_remote_datasource;
+// Removed unnecessary library name per analyzer suggestion.
 
-/// Remote API data source placeholder (not implemented).
-/// Future implementation should perform HTTP calls.
+// Remote API data source placeholder (not implemented).
+// Future implementation should perform HTTP calls.
 import '../../domain/models/user_model.dart';
 
 abstract class AuthRemoteDataSource {

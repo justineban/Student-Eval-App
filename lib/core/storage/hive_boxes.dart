@@ -5,4 +5,5 @@ class HiveBoxes {
   static const teacherCourses = 'teacher_courses_index';
   static const categories = 'categories';
   static const activities = 'activities';
+  static const groups = 'groups';
 }

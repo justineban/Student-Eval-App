@@ -2,16 +2,27 @@ import 'package:get/get.dart';
 import '../../domain/models/category_model.dart';
 import '../../domain/use_cases/create_category_use_case.dart';
 import '../../domain/use_cases/get_categories_use_case.dart';
+import '../../domain/use_cases/update_category_use_case.dart';
+import '../../domain/use_cases/delete_category_use_case.dart';
 
 class CategoryController extends GetxController {
   final CreateCategoryUseCase createCategoryUseCase;
   final GetCategoriesUseCase getCategoriesUseCase;
-  CategoryController({required this.createCategoryUseCase, required this.getCategoriesUseCase});
+  final UpdateCategoryUseCase updateCategoryUseCase;
+  final DeleteCategoryUseCase deleteCategoryUseCase;
+  CategoryController({
+    required this.createCategoryUseCase,
+    required this.getCategoriesUseCase,
+    required this.updateCategoryUseCase,
+    required this.deleteCategoryUseCase,
+  });
 
   final categories = <CategoryModel>[].obs;
   final loading = false.obs;
   final error = RxnString();
   final creating = false.obs;
+  final updating = false.obs;
+  final deleting = false.obs;
 
   Future<void> load(String courseId) async {
     loading.value = true;
@@ -49,5 +60,51 @@ class CategoryController extends GetxController {
     } finally {
       creating.value = false;
     }
+  }
+
+  Future<CategoryModel?> updateCategory(CategoryModel category, {String? name, bool? randomGroups, int? maxStudentsPerGroup}) async {
+    updating.value = true;
+    error.value = null;
+    try {
+      final updated = await updateCategoryUseCase(
+        category: category,
+        name: name,
+        randomGroups: randomGroups,
+        maxStudentsPerGroup: maxStudentsPerGroup,
+      );
+      final idx = categories.indexWhere((c) => c.id == updated.id);
+      if (idx != -1) {
+        categories[idx] = updated; // triggers update
+      }
+      return updated;
+    } catch (e) {
+      error.value = e.toString();
+      return null;
+    } finally {
+      updating.value = false;
+    }
+  }
+
+  Future<bool> delete(String id) async {
+    deleting.value = true;
+    error.value = null;
+    try {
+      await deleteCategoryUseCase(id);
+      categories.removeWhere((c) => c.id == id);
+      return true;
+    } catch (e) {
+      error.value = e.toString();
+      return false;
+    } finally {
+      deleting.value = false;
+    }
+  }
+
+  void viewGroups(CategoryModel category) {
+    Get.toNamed('/course-groups', arguments: {
+      'courseId': category.courseId,
+      'categoryId': category.id,
+      'categoryName': category.name,
+    });
   }
 }

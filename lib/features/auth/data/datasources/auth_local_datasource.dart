@@ -1,5 +1,5 @@
-/// Local (Hive/SQL) data source for authentication.
-/// Provides both in-memory and Hive-backed implementations.
+// Local (Hive/SQL) data source for authentication.
+// Provides both in-memory and Hive-backed implementations.
 import 'package:hive/hive.dart';
 import '../../../../core/storage/hive_boxes.dart';
 import '../../domain/models/user_model.dart';

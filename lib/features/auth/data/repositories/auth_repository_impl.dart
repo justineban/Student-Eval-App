@@ -35,6 +35,7 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   /// Attempt to restore a previously persisted session user.
+  @override
   Future<UserModel?> restoreSession() async {
     if (_cached != null) return _cached;
     final storedId = await local.readSessionUserId();

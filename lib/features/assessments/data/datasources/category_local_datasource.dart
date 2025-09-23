@@ -6,6 +6,7 @@ abstract class CategoryLocalDataSource {
   Future<CategoryModel> save(CategoryModel category);
   Future<List<CategoryModel>> fetchByCourse(String courseId);
   Future<CategoryModel?> fetchById(String id);
+  Future<void> delete(String id);
 }
 
 class HiveCategoryLocalDataSource implements CategoryLocalDataSource {
@@ -42,6 +43,11 @@ class HiveCategoryLocalDataSource implements CategoryLocalDataSource {
     final data = _box.get(id);
     if (data is Map) return _fromMap(data);
     return null;
+  }
+
+  @override
+  Future<void> delete(String id) async {
+    await _box.delete(id);
   }
 
   CategoryModel _fromMap(Map map) => CategoryModel(

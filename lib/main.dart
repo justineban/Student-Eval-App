@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'features/auth/ui/pages/login_page.dart';
 import 'features/auth/ui/controllers/auth_binding.dart';
 import 'core/storage/hive_init.dart';
+import 'features/courses/ui/pages/group_list_page.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -22,6 +23,20 @@ class MyApp extends StatelessWidget {
           colorScheme: ColorScheme.fromSeed(seedColor: Colors.indigo),
           useMaterial3: true,
         ),
+        getPages: [
+          GetPage(
+            name: '/course-groups',
+            page: () {
+              final args = Get.arguments;
+              final map = (args is Map) ? Map<String, dynamic>.from(args) : const <String, dynamic>{};
+              return CourseGroupListPage(
+                courseId: map['courseId'] as String? ?? '',
+                categoryId: map['categoryId'] as String? ?? '',
+                categoryName: map['categoryName'] as String? ?? 'Categoría',
+              );
+            },
+          ),
+        ],
         home: const LoginPage(),
       );
 }

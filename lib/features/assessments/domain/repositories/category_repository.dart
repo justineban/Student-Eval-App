@@ -4,4 +4,6 @@ abstract class CategoryRepository {
   Future<CategoryModel> createCategory({required String courseId, required String name, required bool randomGroups, required int maxStudentsPerGroup});
   Future<List<CategoryModel>> getCategoriesByCourse(String courseId);
   Future<CategoryModel?> getCategory(String id);
+  Future<CategoryModel> updateCategory(CategoryModel category);
+  Future<void> deleteCategory(String id);
 }

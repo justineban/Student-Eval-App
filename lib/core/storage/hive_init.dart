@@ -11,5 +11,6 @@ Future<void> initHive() async {
     Hive.openBox(HiveBoxes.teacherCourses),
     Hive.openBox(HiveBoxes.categories),
     Hive.openBox(HiveBoxes.activities),
+    Hive.openBox(HiveBoxes.groups),
   ]);
 }

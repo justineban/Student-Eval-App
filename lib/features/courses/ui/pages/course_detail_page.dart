@@ -3,7 +3,7 @@ import 'package:get/get.dart';
 import '../../domain/models/course_model.dart';
 import '../../../auth/ui/controllers/auth_controller.dart';
 import '../../ui/controllers/course_controller.dart';
-import 'activity_list_page.dart';
+import '../../../assessments/ui/pages/activity_list_page.dart';
 import 'category_list_page.dart';
 
 class CourseDetailPage extends StatefulWidget {
@@ -129,7 +129,8 @@ class _CourseDetailPageState extends State<CourseDetailPage> {
                 color: Theme.of(context).colorScheme.surface,
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    // withOpacity deprecated; replace using alpha value 0.05 -> 13/255 ~ 0x0D
+                    color: const Color(0x0D000000),
                     blurRadius: 8,
                     offset: const Offset(0, -2),
                   ),
@@ -145,7 +146,7 @@ class _CourseDetailPageState extends State<CourseDetailPage> {
                       children: [
                         Expanded(
                           child: OutlinedButton.icon(
-                            onPressed: () => Get.to(() => const ActivityListPage()),
+                            onPressed: () => Get.to(() => const ActivityListPage(), arguments: {'courseId': course.id}),
                             icon: const Icon(Icons.task_outlined),
                             label: const Text('Ver actividades'),
                           ),
@@ -153,7 +154,7 @@ class _CourseDetailPageState extends State<CourseDetailPage> {
                         const SizedBox(width: 12),
                         Expanded(
                           child: OutlinedButton.icon(
-                            onPressed: () => Get.to(() => const CategoryListPage()),
+                            onPressed: () => Get.to(() => const CategoryListPage(), arguments: {'courseId': course.id}),
                             icon: const Icon(Icons.category_outlined),
                             label: const Text('Ver categorías'),
                           ),

@@ -17,10 +17,20 @@ import '../../../assessments/data/repositories/category_repository_impl.dart';
 import '../../../assessments/data/repositories/activity_repository_impl.dart';
 import '../../../assessments/domain/use_cases/create_category_use_case.dart';
 import '../../../assessments/domain/use_cases/get_categories_use_case.dart';
+import '../../../assessments/domain/use_cases/update_category_use_case.dart';
+import '../../../assessments/domain/use_cases/delete_category_use_case.dart';
 import '../../../assessments/domain/use_cases/create_activity_use_case.dart';
 import '../../../assessments/domain/use_cases/get_activities_use_case.dart';
 import '../../../assessments/ui/controllers/category_controller.dart';
 import '../../../assessments/ui/controllers/activity_controller.dart';
+import '../../../courses/data/datasources/group_local_datasource.dart';
+import '../../../courses/data/repositories/group_repository_impl.dart';
+import '../../../courses/domain/repositories/group_repository.dart';
+import '../../../courses/domain/use_cases/create_group_use_case.dart';
+import '../../../courses/domain/use_cases/get_groups_use_case.dart';
+import '../../../courses/domain/use_cases/delete_group_use_case.dart';
+import '../../../courses/domain/use_cases/add_member_to_group_use_case.dart';
+import '../../../courses/ui/controllers/group_controller.dart';
 import '../../../courses/ui/controllers/course_controller.dart';
 import '../../domain/use_cases/login_use_case.dart';
 import '../../domain/use_cases/register_use_case.dart';
@@ -75,15 +85,39 @@ class AuthBinding extends Bindings {
     // Assessments / Categories / Activities
     Get.lazyPut<CategoryLocalDataSource>(() => HiveCategoryLocalDataSource(), fenix: true);
     Get.lazyPut<ActivityLocalDataSource>(() => HiveActivityLocalDataSource(), fenix: true);
+  Get.lazyPut<CourseGroupLocalDataSource>(() => HiveCourseGroupLocalDataSource(), fenix: true);
     Get.lazyPut<CategoryRepository>(() => CategoryRepositoryImpl(local: Get.find()), fenix: true);
     Get.lazyPut<ActivityRepository>(() => ActivityRepositoryImpl(local: Get.find()), fenix: true);
+  Get.lazyPut<CourseGroupRepository>(() => CourseGroupRepositoryImpl(local: Get.find()), fenix: true);
     Get.lazyPut(() => CreateCategoryUseCase(Get.find<CategoryRepository>()), fenix: true);
     Get.lazyPut(() => GetCategoriesUseCase(Get.find<CategoryRepository>()), fenix: true);
+  Get.lazyPut(() => UpdateCategoryUseCase(Get.find<CategoryRepository>()), fenix: true);
+  Get.lazyPut(() => DeleteCategoryUseCase(Get.find<CategoryRepository>()), fenix: true);
     Get.lazyPut(() => CreateActivityUseCase(activityRepository: Get.find<ActivityRepository>(), categoryRepository: Get.find<CategoryRepository>()), fenix: true);
     Get.lazyPut(() => GetActivitiesUseCase(Get.find<ActivityRepository>()), fenix: true);
+  Get.lazyPut(() => CreateCourseGroupUseCase(Get.find<CourseGroupRepository>()), fenix: true);
+  Get.lazyPut(() => GetCourseGroupsUseCase(Get.find<CourseGroupRepository>()), fenix: true);
+  Get.lazyPut(() => DeleteCourseGroupUseCase(Get.find<CourseGroupRepository>()), fenix: true);
+  Get.lazyPut(() => AddMemberToGroupUseCase(Get.find<CourseGroupRepository>()), fenix: true);
 
     // Controllers for assessments domain
-    Get.put(CategoryController(createCategoryUseCase: Get.find(), getCategoriesUseCase: Get.find()), permanent: true);
-    Get.put(ActivityController(createActivityUseCase: Get.find(), getActivitiesUseCase: Get.find()), permanent: true);
+    Get.put(CategoryController(
+      createCategoryUseCase: Get.find(),
+      getCategoriesUseCase: Get.find(),
+      updateCategoryUseCase: Get.find(),
+      deleteCategoryUseCase: Get.find(),
+    ), permanent: true);
+    if (!Get.isRegistered<ActivityController>()) {
+      Get.lazyPut<ActivityController>(
+        () => ActivityController(
+          createActivityUseCase: Get.find(),
+          getActivitiesUseCase: Get.find(),
+        ),
+        fenix: true,
+      );
+      // ignore: avoid_print
+      print('[AuthBinding] ActivityController registered');
+    }
+  Get.put(CourseGroupController(createUseCase: Get.find(), listUseCase: Get.find(), deleteUseCase: Get.find(), addMemberUseCase: Get.find()), permanent: true);
   }
 }
