@@ -9,5 +9,7 @@ Future<void> initHive() async {
     Hive.openBox(HiveBoxes.session),
     Hive.openBox(HiveBoxes.courses),
     Hive.openBox(HiveBoxes.teacherCourses),
+    Hive.openBox(HiveBoxes.categories),
+    Hive.openBox(HiveBoxes.activities),
   ]);
 }

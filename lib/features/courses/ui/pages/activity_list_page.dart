@@ -1,17 +1,200 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import '../../../assessments/ui/controllers/activity_controller.dart';
+import '../../../assessments/ui/controllers/category_controller.dart';
+import '../controllers/course_controller.dart';
 
-class ActivityListPage extends StatelessWidget {
+class ActivityListPage extends StatefulWidget {
   const ActivityListPage({super.key});
+
+  @override
+  State<ActivityListPage> createState() => _ActivityListPageState();
+}
+
+class _ActivityListPageState extends State<ActivityListPage> {
+  late final ActivityController _activityController;
+  late final CategoryController _categoryController;
+  String? _courseId;
+
+  @override
+  void initState() {
+    super.initState();
+    // Fallback: si no fueron registrados por AuthBinding (hot reload o ingreso directo), registrarlos aquí.
+    if (!Get.isRegistered<ActivityController>()) {
+      try {
+        _activityController = Get.put(ActivityController(createActivityUseCase: Get.find(), getActivitiesUseCase: Get.find()), permanent: true);
+      } catch (_) {
+        // Marcamos un controlador "fantasma" para evitar null; volverá a lanzar al usarlo.
+        throw Exception('Dependencias de ActivityController no registradas (CreateActivityUseCase/GetActivitiesUseCase). Asegure AuthBinding en main.');
+      }
+    } else {
+      _activityController = Get.find<ActivityController>();
+    }
+    if (!Get.isRegistered<CategoryController>()) {
+      try {
+        _categoryController = Get.put(CategoryController(createCategoryUseCase: Get.find(), getCategoriesUseCase: Get.find()), permanent: true);
+      } catch (_) {
+        throw Exception('Dependencias de CategoryController no registradas (CreateCategoryUseCase/GetCategoriesUseCase).');
+      }
+    } else {
+      _categoryController = Get.find<CategoryController>();
+    }
+    final coursesController = Get.isRegistered<CourseController>() ? Get.find<CourseController>() : null;
+    _courseId = coursesController?.courses.isNotEmpty == true ? coursesController!.courses.first.id : null;
+    if (_courseId != null) {
+      _activityController.load(_courseId!);
+      _categoryController.load(_courseId!); // asegurar categorías cargadas
+    }
+  }
+
+  void _openCreateDialog() {
+    if (_courseId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No hay curso seleccionado')));
+      return;
+    }
+    if (_categoryController.categories.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Debe crear antes una categoría')));
+      return;
+    }
+    final nameCtrl = TextEditingController();
+    final descCtrl = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+    final visible = true.obs;
+    final selectedCategory = Rx<String?>(_categoryController.categories.first.id);
+    final dueDate = Rx<DateTime?>(null);
+
+    Future<void> pickDate() async {
+      final now = DateTime.now();
+      final picked = await showDatePicker(
+        context: context,
+        firstDate: now.subtract(const Duration(days: 1)),
+        lastDate: DateTime(now.year + 3),
+        initialDate: now,
+      );
+      if (picked != null) dueDate.value = picked;
+    }
+
+    showDialog(
+      context: context,
+      builder: (_) => Dialog(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Form(
+            key: formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Nueva Actividad', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 12),
+                Obx(() => DropdownButtonFormField<String>(
+                      value: selectedCategory.value,
+                      items: _categoryController.categories
+                          .map((c) => DropdownMenuItem(value: c.id, child: Text(c.name)))
+                          .toList(),
+                      onChanged: (v) => selectedCategory.value = v,
+                      decoration: const InputDecoration(labelText: 'Categoría', border: OutlineInputBorder()),
+                    )),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: nameCtrl,
+                  decoration: const InputDecoration(labelText: 'Nombre', border: OutlineInputBorder()),
+                  validator: (v) => (v == null || v.trim().isEmpty) ? 'Requerido' : null,
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: descCtrl,
+                  decoration: const InputDecoration(labelText: 'Descripción', border: OutlineInputBorder()),
+                  maxLines: 3,
+                  validator: (v) => (v == null || v.trim().isEmpty) ? 'Requerido' : null,
+                ),
+                const SizedBox(height: 12),
+                Obx(() => Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            dueDate.value == null
+                                ? 'Sin fecha límite'
+                                : 'Fecha límite: ${dueDate.value!.day}/${dueDate.value!.month}/${dueDate.value!.year}',
+                            style: const TextStyle(fontSize: 12),
+                          ),
+                        ),
+                        IconButton(
+                          onPressed: pickDate,
+                          icon: const Icon(Icons.calendar_month_outlined),
+                          tooltip: 'Seleccionar fecha',
+                        ),
+                      ],
+                    )),
+                const SizedBox(height: 8),
+                Obx(() => SwitchListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text('Visible para estudiantes'),
+                      value: visible.value,
+                      onChanged: (v) => visible.value = v,
+                    )),
+                const SizedBox(height: 12),
+                Obx(() => _activityController.creating.value
+                    ? const Center(child: Padding(padding: EdgeInsets.all(8), child: CircularProgressIndicator(strokeWidth: 2)))
+                    : Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
+                          const SizedBox(width: 8),
+                          ElevatedButton(
+                            onPressed: () async {
+                              if (!formKey.currentState!.validate()) return;
+                              final created = await _activityController.create(
+                                courseId: _courseId!,
+                                categoryId: selectedCategory.value!,
+                                name: nameCtrl.text.trim(),
+                                description: descCtrl.text.trim(),
+                                dueDate: dueDate.value,
+                                visible: visible.value,
+                              );
+                              if (created != null && mounted) {
+                                Navigator.pop(context);
+                              }
+                            },
+                            child: const Text('Crear'),
+                          ),
+                        ],
+                      )),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Actividades')),
-      body: const Center(child: Text('Aún no hay actividades')),
+      body: Obx(() {
+        if (_courseId == null) return const Center(child: Text('No hay curso para actividades'));
+        if (_activityController.loading.value) return const Center(child: CircularProgressIndicator());
+        if (_activityController.activities.isEmpty) {
+          return const Center(child: Text('Aún no hay actividades'));
+        }
+        return ListView.separated(
+          itemCount: _activityController.activities.length,
+          separatorBuilder: (_, __) => const Divider(height: 1),
+          itemBuilder: (_, i) {
+            final a = _activityController.activities[i];
+            return ListTile(
+              title: Text(a.name),
+              subtitle: Text(a.visible ? 'Visible' : 'Oculta'),
+              trailing: a.dueDate == null
+                  ? null
+                  : Text('${a.dueDate!.day}/${a.dueDate!.month}/${a.dueDate!.year}', style: const TextStyle(fontSize: 12)),
+            );
+          },
+        );
+      }),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // TODO: abrir creación de actividad (use case futuro)
-        },
+        onPressed: _openCreateDialog,
         child: const Icon(Icons.add),
       ),
     );
