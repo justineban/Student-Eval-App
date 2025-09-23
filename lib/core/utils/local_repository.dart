@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
+
 import '../entities/user.dart';
 import '../entities/course.dart';
 import '../entities/category.dart';
@@ -7,29 +8,18 @@ import '../entities/group.dart';
 import '../entities/adapters.dart';
 
 class LocalRepository extends ChangeNotifier {
-  // Getter público para obtener todos los usuarios
   List<User> get users => usersBox.values.toList();
 
-  Future<void> moveStudentToGroup({required String userId, required String fromGroupId, required String toGroupId}) async {
-    final fromGroup = groupsBox.get(fromGroupId);
-    final toGroup = groupsBox.get(toGroupId);
-    if (fromGroup == null || toGroup == null) return;
-    if (fromGroup.memberIds.contains(userId)) {
-      fromGroup.memberIds.remove(userId);
-      await groupsBox.put(fromGroup.id, fromGroup);
-    }
-    if (!toGroup.memberIds.contains(userId)) {
-      toGroup.memberIds.add(userId);
-      await groupsBox.put(toGroup.id, toGroup);
-    }
-    notifyListeners();
-  }
-  Future<void> deleteGroup(String groupId) async {
-    await groupsBox.delete(groupId);
-    notifyListeners();
-  }
   static final LocalRepository instance = LocalRepository._internal();
   LocalRepository._internal();
+
+  Box<User> get usersBox => Hive.box<User>('users');
+  Box<Course> get coursesBox => Hive.box<Course>('courses');
+  Box<Category> get categoriesBox => Hive.box<Category>('categories');
+  Box<Group> get groupsBox => Hive.box<Group>('groups');
+  Box get sessionBox => Hive.box('session');
+
+  User? currentUser;
 
   static Future<void> registerAdapters() async {
     if (!Hive.isAdapterRegistered(0)) Hive.registerAdapter(UserAdapter());
@@ -55,15 +45,6 @@ class LocalRepository extends ChangeNotifier {
     await Hive.openBox<Group>('groups');
     await Hive.openBox('session');
   }
-
-  Box<User> get usersBox => Hive.box<User>('users');
-  Box<Course> get coursesBox => Hive.box<Course>('courses');
-  Box<Category> get categoriesBox => Hive.box<Category>('categories');
-  Box<Group> get groupsBox => Hive.box<Group>('groups');
-
-  User? currentUser;
-
-  Box get sessionBox => Hive.box('session');
 
   void loadCurrentUserFromSession() {
     final id = sessionBox.get('currentUserId') as String?;
@@ -118,9 +99,23 @@ class LocalRepository extends ChangeNotifier {
     return course;
   }
 
-  Course? getCourse(String id) {
-    return coursesBox.get(id);
+  Future<bool> deleteCourse(String id) async {
+    final course = coursesBox.get(id);
+    if (course == null) return false;
+    final cats = categoriesBox.values.where((c) => c.courseId == id).toList();
+    for (final cat in cats) {
+      final groups = groupsBox.values.where((g) => g.categoryId == cat.id).toList();
+      for (final g in groups) {
+        await groupsBox.delete(g.id);
+      }
+      await categoriesBox.delete(cat.id);
+    }
+    await coursesBox.delete(id);
+    notifyListeners();
+    return true;
   }
+
+  Course? getCourse(String id) => coursesBox.get(id);
 
   Future<bool> inviteByEmail(String courseId, String email) async {
     final c = getCourse(courseId);
@@ -136,14 +131,10 @@ class LocalRepository extends ChangeNotifier {
   Future<Course?> enrollByCode(String code, String userId) async {
     try {
       final course = coursesBox.values.firstWhere((c) => c.registrationCode == code);
-      // Validación: el docente no puede inscribirse a su propio curso
-      if (course.teacherId == userId) {
-        return null;
-      }
+      if (course.teacherId == userId) return null;
       if (!course.studentIds.contains(userId)) {
         course.studentIds.add(userId);
         await coursesBox.put(course.id, course);
-        // Regenerar grupos de todas las categorías de este curso
         for (final cat in categoriesBox.values.where((c) => c.courseId == course.id)) {
           await createGroupsForCategory(cat.id, onlyAssignNew: true, newStudentId: userId);
         }
@@ -163,7 +154,6 @@ class LocalRepository extends ChangeNotifier {
     if (!course.invitations.contains(user.email)) return false;
     if (!course.studentIds.contains(userId)) {
       course.studentIds.add(userId);
-      // Regenerar grupos de todas las categorías de este curso
       for (final cat in categoriesBox.values.where((c) => c.courseId == course.id)) {
         await createGroupsForCategory(cat.id, onlyAssignNew: true, newStudentId: userId);
       }
@@ -174,16 +164,13 @@ class LocalRepository extends ChangeNotifier {
     return true;
   }
 
-  List<Course> listInvitationsForUser(String email) {
-    return coursesBox.values.where((c) => c.invitations.contains(email)).toList();
-  }
+  List<Course> listInvitationsForUser(String email) => coursesBox.values.where((c) => c.invitations.contains(email)).toList();
 
   Future<Category> createCategory(Category category) async {
-  await categoriesBox.put(category.id, category);
-  // Generar grupos automáticamente al crear la categoría
-  await createGroupsForCategory(category.id);
-  notifyListeners();
-  return category;
+    await categoriesBox.put(category.id, category);
+    await createGroupsForCategory(category.id);
+    notifyListeners();
+    return category;
   }
 
   Future<Category?> updateCategory(String id, {String? name, bool? randomAssign, int? studentsPerGroup}) async {
@@ -231,10 +218,10 @@ class LocalRepository extends ChangeNotifier {
     List<Group> newGroups = [];
 
     if (onlyAssignNew && newStudentId != null) {
-      // Solo asignar el nuevo estudiante
       if (cat.randomAssign) {
-        // Buscar grupo con cupo
-        List<Group> groups = existing.isNotEmpty ? List<Group>.from(existing) : [for (var i = 1; i <= groupCount; i++) Group(id: '${cat.id}_g$i', categoryId: cat.id, name: 'Grupo $i')];
+        List<Group> groups = existing.isNotEmpty
+            ? List<Group>.from(existing)
+            : [for (var i = 1; i <= groupCount; i++) Group(id: '${cat.id}_g$i', categoryId: cat.id, name: 'Grupo $i')];
         Group? groupWithSpace;
         for (final g in groups) {
           if (g.memberIds.length < cat.studentsPerGroup) {
@@ -243,7 +230,6 @@ class LocalRepository extends ChangeNotifier {
           }
         }
         if (groupWithSpace == null) {
-          // No hay grupo con cupo, crear uno nuevo
           final newGroup = Group(
             id: '${cat.id}_g${groups.length + 1}',
             categoryId: cat.id,
@@ -256,17 +242,18 @@ class LocalRepository extends ChangeNotifier {
           await groupsBox.put(groupWithSpace.id, groupWithSpace);
         }
       }
-      // En modo libre no se asigna automáticamente
       notifyListeners();
       return groupsBox.values.where((g) => g.categoryId == categoryId).toList();
     }
 
     if (cat.randomAssign) {
-      // Aleatorio: repartir todos los estudiantes aleatoriamente SOLO si cambia el tamaño o se crea la categoría
       allStudents.shuffle();
       int idx = 0;
       for (var i = 1; i <= groupCount; i++) {
-        final members = allStudents.sublist(idx, (idx + cat.studentsPerGroup) > allStudents.length ? allStudents.length : idx + cat.studentsPerGroup);
+        final members = allStudents.sublist(
+          idx,
+          (idx + cat.studentsPerGroup) > allStudents.length ? allStudents.length : idx + cat.studentsPerGroup,
+        );
         newGroups.add(Group(
           id: '${cat.id}_g$i',
           categoryId: cat.id,
@@ -276,7 +263,6 @@ class LocalRepository extends ChangeNotifier {
         idx += cat.studentsPerGroup;
       }
     } else {
-      // Libre: mantener los grupos y estudiantes existentes si es posible
       for (var i = 1; i <= groupCount; i++) {
         final groupId = '${cat.id}_g$i';
         final existingGroup = existing.firstWhere(
@@ -298,8 +284,8 @@ class LocalRepository extends ChangeNotifier {
           group.memberIds = group.memberIds.sublist(0, cat.studentsPerGroup);
         }
       }
-      // NO asignar automáticamente nuevos estudiantes en modo libre
     }
+
     for (final g in existing) {
       await groupsBox.delete(g.id);
     }
@@ -308,12 +294,9 @@ class LocalRepository extends ChangeNotifier {
     }
     notifyListeners();
     return newGroups;
-
   }
 
-  List<Group> listGroupsForCategory(String categoryId) {
-    return groupsBox.values.where((g) => g.categoryId == categoryId).toList();
-  }
+  List<Group> listGroupsForCategory(String categoryId) => groupsBox.values.where((g) => g.categoryId == categoryId).toList();
 
   Future<bool> joinGroup(String groupId, String userId) async {
     final g = groupsBox.get(groupId);
@@ -337,10 +320,29 @@ class LocalRepository extends ChangeNotifier {
     return true;
   }
 
+  Future<void> moveStudentToGroup({required String userId, required String fromGroupId, required String toGroupId}) async {
+    final fromGroup = groupsBox.get(fromGroupId);
+    final toGroup = groupsBox.get(toGroupId);
+    if (fromGroup == null || toGroup == null) return;
+    if (fromGroup.memberIds.contains(userId)) {
+      fromGroup.memberIds.remove(userId);
+      await groupsBox.put(fromGroup.id, fromGroup);
+    }
+    if (!toGroup.memberIds.contains(userId)) {
+      toGroup.memberIds.add(userId);
+      await groupsBox.put(toGroup.id, toGroup);
+    }
+    notifyListeners();
+  }
+
+  Future<void> deleteGroup(String groupId) async {
+    await groupsBox.delete(groupId);
+    notifyListeners();
+  }
+
   List<User> listStudentsForCourse(String courseId) {
     final course = coursesBox.get(courseId);
     if (course == null) return [];
-    final users = course.studentIds.map((id) => usersBox.get(id)).whereType<User>().toList();
-    return users;
+    return course.studentIds.map((id) => usersBox.get(id)).whereType<User>().toList();
   }
 }

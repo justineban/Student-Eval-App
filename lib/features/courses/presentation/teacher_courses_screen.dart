@@ -12,10 +12,12 @@ class TeacherCoursesScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final repo = Provider.of<LocalRepository>(context);
     final user = repo.currentUser;
-    final myCourses = repo.coursesBox.values.where((c) => c.teacherId == user?.id).toList();
+    final myCourses = repo.coursesBox.values
+        .where((c) => c.teacherId == user?.id)
+        .toList();
 
     return Scaffold(
-    appBar: const TopBar(title: 'Mis Cursos'),
+      appBar: const TopBar(title: 'Mis Cursos'),
       body: ListView.builder(
         itemCount: myCourses.length,
         itemBuilder: (context, index) {
@@ -23,12 +25,25 @@ class TeacherCoursesScreen extends StatelessWidget {
           return ListTile(
             title: Text(course.name),
             subtitle: Text('${course.studentIds.length} estudiantes'),
-            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => CourseDetailScreen(course: course))),
+            onTap: () async {
+              final changed = await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => CourseDetailScreen(course: course),
+                ),
+              );
+              if (changed == true) {
+                // Forzar rebuild leyendo de provider (ya notificado en deleteCourse)
+              }
+            },
           );
         },
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CreateCourseScreen())),
+        onPressed: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const CreateCourseScreen()),
+        ),
         child: const Icon(Icons.add),
       ),
     );
