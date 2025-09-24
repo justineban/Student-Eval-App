@@ -19,9 +19,11 @@ import '../../../assessments/domain/repositories/category_repository.dart';
 import '../../../assessments/domain/repositories/activity_repository.dart';
 import '../../../assessments/data/datasources/category_local_datasource.dart';
 import '../../../assessments/data/datasources/category_remote_roble_datasource.dart';
+import '../../../assessments/data/datasources/activity_remote_roble_datasource.dart';
 import '../../../assessments/data/datasources/activity_local_datasource.dart';
 import '../../../assessments/data/repositories/category_repository_impl.dart';
 import '../../../assessments/data/repositories/activity_repository_impl.dart';
+import '../../../assessments/data/datasources/assessment_remote_roble_datasource.dart';
 import '../../../assessments/domain/use_cases/create_category_use_case.dart';
 import '../../../assessments/domain/use_cases/get_categories_use_case.dart';
 import '../../../assessments/domain/use_cases/update_category_use_case.dart';
@@ -45,6 +47,7 @@ import '../../../assessments/data/repositories/peer_evaluation_repository_impl.d
 import '../../../assessments/domain/repositories/peer_evaluation_repository.dart';
 import '../../../assessments/domain/use_cases/save_peer_evaluations_use_case.dart';
 import '../../../assessments/domain/use_cases/get_received_peer_evaluations_use_case.dart';
+import '../../../assessments/data/datasources/peer_evaluation_remote_roble_datasource.dart';
 import '../../../courses/data/datasources/group_local_datasource.dart';
 import '../../../courses/data/datasources/group_remote_roble_datasource.dart';
 import '../../../courses/data/datasources/course_remote_roble_datasource.dart';
@@ -129,14 +132,19 @@ class AuthBinding extends Bindings {
     // Assessments / Categories / Activities
     Get.lazyPut<CategoryLocalDataSource>(() => HiveCategoryLocalDataSource(), fenix: true); // kept for legacy reads if needed
     Get.lazyPut<CategoryRemoteDataSource>(() => RobleCategoryRemoteDataSource(projectId: 'movil_993b654d20', debugLogging: true), fenix: true);
-    Get.lazyPut<ActivityLocalDataSource>(() => HiveActivityLocalDataSource(), fenix: true);
+  Get.lazyPut<ActivityLocalDataSource>(() => HiveActivityLocalDataSource(), fenix: true);
+  // Remote datasources for assessments
+  Get.lazyPut<ActivityRemoteDataSource>(() => RobleActivityRemoteDataSource(projectId: 'movil_993b654d20', debugLogging: true), fenix: true);
   Get.lazyPut<CourseGroupLocalDataSource>(() => HiveCourseGroupLocalDataSource(), fenix: true); // used as cache mirror
   Get.lazyPut<CourseGroupRemoteDataSource>(() => RobleCourseGroupRemoteDataSource(projectId: 'movil_993b654d20', debugLogging: true), fenix: true);
     Get.lazyPut<CategoryRepository>(() => CategoryRepositoryImpl(
       remote: Get.find<CategoryRemoteDataSource>(),
       localCache: Get.isRegistered<CategoryLocalDataSource>() ? Get.find<CategoryLocalDataSource>() : null,
     ), fenix: true);
-    Get.lazyPut<ActivityRepository>(() => ActivityRepositoryImpl(local: Get.find()), fenix: true);
+    Get.lazyPut<ActivityRepository>(() => ActivityRepositoryImpl(
+      remote: Get.find<ActivityRemoteDataSource>(),
+      localCache: Get.isRegistered<ActivityLocalDataSource>() ? Get.find<ActivityLocalDataSource>() : null,
+    ), fenix: true);
   Get.lazyPut<CourseGroupRepository>(() => CourseGroupRepositoryImpl(
     remote: Get.find<CourseGroupRemoteDataSource>(),
     localCache: Get.isRegistered<CourseGroupLocalDataSource>() ? Get.find<CourseGroupLocalDataSource>() : null,
@@ -149,7 +157,11 @@ class AuthBinding extends Bindings {
   Get.lazyPut(() => GetActivitiesUseCase(Get.find<ActivityRepository>()), fenix: true);
     // Assessments wiring
     Get.lazyPut<AssessmentLocalDataSource>(() => HiveAssessmentLocalDataSource(), fenix: true);
-    Get.lazyPut<AssessmentRepository>(() => AssessmentRepositoryImpl(local: Get.find()), fenix: true);
+    Get.lazyPut<AssessmentRemoteDataSource>(() => RobleAssessmentRemoteDataSource(projectId: 'movil_993b654d20', debugLogging: true), fenix: true);
+    Get.lazyPut<AssessmentRepository>(() => AssessmentRepositoryImpl(
+      remote: Get.find<AssessmentRemoteDataSource>(),
+      localCache: Get.isRegistered<AssessmentLocalDataSource>() ? Get.find<AssessmentLocalDataSource>() : null,
+    ), fenix: true);
     Get.lazyPut(() => CreateAssessmentUseCase(Get.find<AssessmentRepository>()), fenix: true);
     Get.lazyPut(() => GetAssessmentByActivityUseCase(Get.find<AssessmentRepository>()), fenix: true);
     Get.lazyPut(() => UpdateAssessmentUseCase(Get.find<AssessmentRepository>()), fenix: true);
@@ -166,7 +178,11 @@ class AuthBinding extends Bindings {
 
     // Peer evaluations wiring
     Get.lazyPut<PeerEvaluationLocalDataSource>(() => HivePeerEvaluationLocalDataSource(), fenix: true);
-    Get.lazyPut<PeerEvaluationRepository>(() => PeerEvaluationRepositoryImpl(local: Get.find()), fenix: true);
+    Get.lazyPut<PeerEvaluationRemoteDataSource>(() => RoblePeerEvaluationRemoteDataSource(projectId: 'movil_993b654d20', debugLogging: true), fenix: true);
+    Get.lazyPut<PeerEvaluationRepository>(() => PeerEvaluationRepositoryImpl(
+      remote: Get.find<PeerEvaluationRemoteDataSource>(),
+      localCache: Get.isRegistered<PeerEvaluationLocalDataSource>() ? Get.find<PeerEvaluationLocalDataSource>() : null,
+    ), fenix: true);
     Get.lazyPut(() => SavePeerEvaluationsUseCase(Get.find<PeerEvaluationRepository>()), fenix: true);
   Get.lazyPut(() => GetReceivedPeerEvaluationsUseCase(Get.find<PeerEvaluationRepository>()), fenix: true);
 

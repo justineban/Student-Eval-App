@@ -10,6 +10,7 @@ import '../../../assessments/domain/models/assessment_model.dart';
 import '../../../assessments/domain/models/peer_evaluation_model.dart';
 import '../../../assessments/domain/use_cases/get_received_peer_evaluations_use_case.dart';
 import '../../../assessments/data/datasources/peer_evaluation_local_datasource.dart';
+import '../../../assessments/data/datasources/peer_evaluation_remote_roble_datasource.dart';
 import '../../../assessments/data/repositories/peer_evaluation_repository_impl.dart';
 import '../../../assessments/domain/repositories/peer_evaluation_repository.dart';
 
@@ -48,7 +49,13 @@ class _MyGradesPageState extends State<MyGradesPage> {
         if (!Get.isRegistered<PeerEvaluationLocalDataSource>()) {
           Get.lazyPut<PeerEvaluationLocalDataSource>(() => HivePeerEvaluationLocalDataSource(), fenix: true);
         }
-        Get.lazyPut<PeerEvaluationRepository>(() => PeerEvaluationRepositoryImpl(local: Get.find()), fenix: true);
+        if (!Get.isRegistered<PeerEvaluationRemoteDataSource>()) {
+          Get.lazyPut<PeerEvaluationRemoteDataSource>(() => RoblePeerEvaluationRemoteDataSource(projectId: 'movil_993b654d20', debugLogging: true), fenix: true);
+        }
+        Get.lazyPut<PeerEvaluationRepository>(() => PeerEvaluationRepositoryImpl(
+          remote: Get.find<PeerEvaluationRemoteDataSource>(),
+          localCache: Get.find<PeerEvaluationLocalDataSource>(),
+        ), fenix: true);
       }
       Get.lazyPut(() => GetReceivedPeerEvaluationsUseCase(Get.find<PeerEvaluationRepository>()), fenix: true);
     }
