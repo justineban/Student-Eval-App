@@ -18,6 +18,7 @@ import '../../../courses/domain/use_cases/delete_course_use_case.dart';
 import '../../../assessments/domain/repositories/category_repository.dart';
 import '../../../assessments/domain/repositories/activity_repository.dart';
 import '../../../assessments/data/datasources/category_local_datasource.dart';
+import '../../../assessments/data/datasources/category_remote_roble_datasource.dart';
 import '../../../assessments/data/datasources/activity_local_datasource.dart';
 import '../../../assessments/data/repositories/category_repository_impl.dart';
 import '../../../assessments/data/repositories/activity_repository_impl.dart';
@@ -45,6 +46,8 @@ import '../../../assessments/domain/repositories/peer_evaluation_repository.dart
 import '../../../assessments/domain/use_cases/save_peer_evaluations_use_case.dart';
 import '../../../assessments/domain/use_cases/get_received_peer_evaluations_use_case.dart';
 import '../../../courses/data/datasources/group_local_datasource.dart';
+import '../../../courses/data/datasources/group_remote_roble_datasource.dart';
+import '../../../courses/data/datasources/course_remote_roble_datasource.dart';
 import '../../../courses/data/repositories/group_repository_impl.dart';
 import '../../../courses/domain/repositories/group_repository.dart';
 import '../../../courses/domain/use_cases/create_group_use_case.dart';
@@ -89,7 +92,7 @@ class AuthBinding extends Bindings {
 
     // Courses module (basic in-memory wiring for now)
   Get.lazyPut<CourseLocalDataSource>(() => HiveCourseLocalDataSource(), fenix: true);
-  Get.lazyPut<CourseRemoteDataSource>(() => StubCourseRemoteDataSource(), fenix: true);
+  Get.lazyPut<CourseRemoteDataSource>(() => RobleCourseRemoteDataSource(projectId: 'movil_993b654d20', debugLogging: true), fenix: true);
     Get.lazyPut<CourseRepository>(() {
       final local = Get.find<CourseLocalDataSource>();
       CourseRemoteDataSource? remote;
@@ -124,12 +127,20 @@ class AuthBinding extends Bindings {
     ), permanent: true);
 
     // Assessments / Categories / Activities
-    Get.lazyPut<CategoryLocalDataSource>(() => HiveCategoryLocalDataSource(), fenix: true);
+    Get.lazyPut<CategoryLocalDataSource>(() => HiveCategoryLocalDataSource(), fenix: true); // kept for legacy reads if needed
+    Get.lazyPut<CategoryRemoteDataSource>(() => RobleCategoryRemoteDataSource(projectId: 'movil_993b654d20', debugLogging: true), fenix: true);
     Get.lazyPut<ActivityLocalDataSource>(() => HiveActivityLocalDataSource(), fenix: true);
-  Get.lazyPut<CourseGroupLocalDataSource>(() => HiveCourseGroupLocalDataSource(), fenix: true);
-    Get.lazyPut<CategoryRepository>(() => CategoryRepositoryImpl(local: Get.find()), fenix: true);
+  Get.lazyPut<CourseGroupLocalDataSource>(() => HiveCourseGroupLocalDataSource(), fenix: true); // used as cache mirror
+  Get.lazyPut<CourseGroupRemoteDataSource>(() => RobleCourseGroupRemoteDataSource(projectId: 'movil_993b654d20', debugLogging: true), fenix: true);
+    Get.lazyPut<CategoryRepository>(() => CategoryRepositoryImpl(
+      remote: Get.find<CategoryRemoteDataSource>(),
+      localCache: Get.isRegistered<CategoryLocalDataSource>() ? Get.find<CategoryLocalDataSource>() : null,
+    ), fenix: true);
     Get.lazyPut<ActivityRepository>(() => ActivityRepositoryImpl(local: Get.find()), fenix: true);
-  Get.lazyPut<CourseGroupRepository>(() => CourseGroupRepositoryImpl(local: Get.find()), fenix: true);
+  Get.lazyPut<CourseGroupRepository>(() => CourseGroupRepositoryImpl(
+    remote: Get.find<CourseGroupRemoteDataSource>(),
+    localCache: Get.isRegistered<CourseGroupLocalDataSource>() ? Get.find<CourseGroupLocalDataSource>() : null,
+  ), fenix: true);
     Get.lazyPut(() => CreateCategoryUseCase(Get.find<CategoryRepository>()), fenix: true);
     Get.lazyPut(() => GetCategoriesUseCase(Get.find<CategoryRepository>()), fenix: true);
   Get.lazyPut(() => UpdateCategoryUseCase(Get.find<CategoryRepository>()), fenix: true);

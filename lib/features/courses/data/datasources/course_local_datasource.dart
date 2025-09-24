@@ -296,6 +296,12 @@ class HiveCourseLocalDataSource implements CourseLocalDataSource {
 abstract class CourseRemoteDataSource {
   Future<CourseModel> createRemoteCourse({required String name, required String description, required String teacherId});
   Future<List<CourseModel>> fetchRemoteCoursesByTeacher(String teacherId);
+  Future<CourseModel?> fetchRemoteCourseById(String id);
+  Future<CourseModel> updateRemoteCourse({required String id, required Map<String, dynamic> updates});
+  Future<void> deleteRemoteCourse(String id);
+  Future<CourseModel?> fetchRemoteCourseByRegistrationCode(String code);
+  Future<List<CourseModel>> fetchRemoteCoursesByStudent(String studentId);
+  Future<List<CourseModel>> fetchRemoteInvitedCoursesForEmail(String email);
 }
 
 class StubCourseRemoteDataSource implements CourseRemoteDataSource {
@@ -309,5 +315,35 @@ class StubCourseRemoteDataSource implements CourseRemoteDataSource {
   Future<List<CourseModel>> fetchRemoteCoursesByTeacher(String teacherId) async {
     // TODO: implement API call
     return [];
+  }
+
+  @override
+  Future<void> deleteRemoteCourse(String id) async {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<CourseModel?> fetchRemoteCourseById(String id) async {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<CourseModel?> fetchRemoteCourseByRegistrationCode(String code) async {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<List<CourseModel>> fetchRemoteCoursesByStudent(String studentId) async {
+    return [];
+  }
+
+  @override
+  Future<List<CourseModel>> fetchRemoteInvitedCoursesForEmail(String email) async {
+    return [];
+  }
+
+  @override
+  Future<CourseModel> updateRemoteCourse({required String id, required Map<String, dynamic> updates}) async {
+    throw UnimplementedError();
   }
 }
