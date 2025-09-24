@@ -32,7 +32,7 @@ class AuthRepositoryImpl implements AuthRepository {
       // Use dynamic keys to avoid API surface change; store under well-known keys
       await hive.persistTokenPair(session.accessToken, session.refreshToken);
     }
-    return session.user;
+    return effectiveUser;
   }
 
   /// Attempt to restore a previously persisted session user.
@@ -79,7 +79,7 @@ class AuthRepositoryImpl implements AuthRepository {
       final hive = (local as HiveAuthLocalDataSource);
       await hive.persistTokenPair(session.accessToken, session.refreshToken);
     }
-    return session.user;
+    return effectiveUser;
   }
 
   @override
