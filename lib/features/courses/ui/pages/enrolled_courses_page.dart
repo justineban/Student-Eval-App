@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/student_courses_controller.dart';
 import '../../domain/models/course_model.dart';
-import 'enroll_course_page.dart';
 import 'course_detail_page.dart';
 
 class EnrolledCoursesPage extends StatefulWidget {
@@ -39,7 +38,7 @@ class _EnrolledCoursesPageState extends State<EnrolledCoursesPage> {
           IconButton(
             tooltip: 'Inscribirme a un curso',
             icon: const Icon(Icons.add),
-            onPressed: () => Get.to(() => const EnrollCoursePage()),
+            onPressed: () => Get.toNamed('/enroll'),
           )
         ],
       ),
@@ -57,7 +56,7 @@ class _EnrolledCoursesPageState extends State<EnrolledCoursesPage> {
                 const Text('Aún no estás inscrito en ningún curso'),
                 const SizedBox(height: 8),
                 OutlinedButton.icon(
-                  onPressed: () => Get.to(() => const EnrollCoursePage()),
+                  onPressed: () => Get.toNamed('/enroll'),
                   icon: const Icon(Icons.add),
                   label: const Text('Inscribirme a un curso'),
                 )

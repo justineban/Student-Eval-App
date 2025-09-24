@@ -3,6 +3,8 @@ import 'package:get/get.dart';
 import '../controllers/activity_controller.dart';
 import '../controllers/category_controller.dart';
 import '../../../courses/ui/controllers/course_controller.dart';
+import '../../../auth/ui/controllers/auth_controller.dart';
+import '../../../courses/domain/repositories/course_repository.dart';
 import '../../domain/models/activity_model.dart';
 import 'activity_detail_page.dart';
 
@@ -17,6 +19,8 @@ class _ActivityListPageState extends State<ActivityListPage> {
   late final ActivityController _activityController;
   late final CategoryController _categoryController;
   String? _courseId;
+  late final AuthController _auth;
+  bool _isTeacher = false;
 
   @override
   void initState() {
@@ -54,13 +58,45 @@ class _ActivityListPageState extends State<ActivityListPage> {
       final coursesController = Get.isRegistered<CourseController>() ? Get.find<CourseController>() : null;
       _courseId = coursesController?.courses.isNotEmpty == true ? coursesController!.courses.first.id : null;
     }
+    _auth = Get.find<AuthController>();
     if (_courseId != null) {
       _activityController.load(_courseId!);
       _categoryController.load(_courseId!);
+      _determineRole();
     }
   }
 
   // no-op
+
+  Future<void> _determineRole() async {
+    try {
+      final repo = Get.find<CourseRepository>();
+      final course = await repo.getCourseById(_courseId!);
+      final uid = _auth.currentUser.value?.id;
+      if (mounted) setState(() => _isTeacher = (course?.teacherId == uid));
+    } catch (_) {
+      if (mounted) setState(() => _isTeacher = false);
+    }
+  }
+
+  String _dueWarning(ActivityModel a) {
+    final due = a.dueDate;
+    if (due == null) return 'Sin fecha límite';
+    final now = DateTime.now();
+    if (due.isAfter(now)) {
+      final diff = due.difference(now);
+      if (diff.inDays >= 1) return 'Quedan ${diff.inDays} día${diff.inDays == 1 ? '' : 's'}';
+      if (diff.inHours >= 1) return 'Quedan ${diff.inHours} hora${diff.inHours == 1 ? '' : 's'}';
+      final mins = diff.inMinutes.clamp(0, 1000000);
+      return 'Quedan $mins min';
+    } else {
+      final diff = now.difference(due);
+      if (diff.inDays >= 1) return 'Vencida hace ${diff.inDays} día${diff.inDays == 1 ? '' : 's'}';
+      if (diff.inHours >= 1) return 'Vencida hace ${diff.inHours} hora${diff.inHours == 1 ? '' : 's'}';
+      final mins = diff.inMinutes.clamp(0, 1000000);
+      return 'Vencida hace $mins min';
+    }
+  }
 
   void _openCreateDialog() {
     if (_courseId == null) {
@@ -103,9 +139,7 @@ class _ActivityListPageState extends State<ActivityListPage> {
                 const Text('Nueva Actividad', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 12),
         Obx(() => DropdownButtonFormField<String>(
-          // 'value' deprecated: use initialValue if possible when building inside a Form field creation
-          // However DropdownButtonFormField still uses 'value'; to silence lint we keep but ignore warning or adapt:
-          value: selectedCategory.value,
+          initialValue: selectedCategory.value,
                       items: _categoryController.categories
                           .map((c) => DropdownMenuItem(value: c.id, child: Text(c.name)))
                           .toList(),
@@ -217,8 +251,8 @@ class _ActivityListPageState extends State<ActivityListPage> {
               children: [
                 const Text('Editar Actividad', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 12),
-                Obx(() => DropdownButtonFormField<String>(
-                      value: selectedCategory.value,
+        Obx(() => DropdownButtonFormField<String>(
+          initialValue: selectedCategory.value,
                       items: _categoryController.categories
                           .map((c) => DropdownMenuItem(value: c.id, child: Text(c.name)))
                           .toList(),
@@ -305,63 +339,94 @@ class _ActivityListPageState extends State<ActivityListPage> {
       body: Obx(() {
         if (_courseId == null) return const Center(child: Text('No hay curso para actividades'));
         if (_activityController.loading.value) return const Center(child: CircularProgressIndicator());
-        if (_activityController.activities.isEmpty) {
+        // Filter for students: only visible activities
+        final items = _isTeacher
+            ? _activityController.activities
+            : _activityController.activities.where((a) => a.visible).toList(growable: false);
+        if (items.isEmpty) {
           return const Center(child: Text('Aún no hay actividades'));
         }
         return ListView.separated(
-          itemCount: _activityController.activities.length,
+          itemCount: items.length,
           separatorBuilder: (_, __) => const Divider(height: 1),
           itemBuilder: (_, i) {
-            final a = _activityController.activities[i];
+            final a = items[i];
             var category = null as dynamic;
             for (final c in _categoryController.categories) { if (c.id == a.categoryId) { category = c; break; } }
             return ListTile(
               onTap: () => Get.to(() => ActivityDetailPage(activity: a)),
               title: Text(a.name),
-              subtitle: Text('Categoría: ${category?.name ?? '—'}'),
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  IconButton(
-                    tooltip: a.visible ? 'Ocultar' : 'Mostrar',
-                    icon: Icon(a.visible ? Icons.visibility : Icons.visibility_off),
-                    onPressed: () => _activityController.toggleVisibility(a),
-                  ),
-                  IconButton(
-                    tooltip: 'Editar',
-                    icon: const Icon(Icons.edit_outlined),
-                    onPressed: () => _openEditDialog(a),
-                  ),
-                  IconButton(
-                    tooltip: 'Eliminar',
-                    icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
-                    onPressed: () async {
-                      final confirm = await showDialog<bool>(
-                        context: context,
-                        builder: (_) => AlertDialog(
-                          title: const Text('Eliminar actividad'),
-                          content: Text('¿Deseas eliminar "${a.name}"?'),
-                          actions: [
-                            TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
-                            TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Eliminar')),
-                          ],
+              subtitle: _isTeacher
+                  ? Text('Categoría: ${category?.name ?? '—'}')
+                  : Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Categoría: ${category?.name ?? '—'}'),
+                        const SizedBox(height: 2),
+                        Builder(builder: (_) {
+                          final dueText = _dueWarning(a);
+                          final isOverdue = a.dueDate != null && a.dueDate!.isBefore(DateTime.now());
+                          final isSoon = a.dueDate != null && !isOverdue && a.dueDate!.difference(DateTime.now()).inDays < 2;
+                          final color = isOverdue
+                              ? Colors.red
+                              : (isSoon ? Colors.orange : Theme.of(context).colorScheme.primary);
+                          return Row(
+                            children: [
+                              Icon(isOverdue ? Icons.warning_amber_rounded : Icons.timer_outlined, size: 16, color: color),
+                              const SizedBox(width: 6),
+                              Text(dueText, style: TextStyle(color: color, fontWeight: FontWeight.w600)),
+                            ],
+                          );
+                        }),
+                      ],
+                    ),
+              trailing: _isTeacher
+                  ? Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          tooltip: a.visible ? 'Ocultar' : 'Mostrar',
+                          icon: Icon(a.visible ? Icons.visibility : Icons.visibility_off),
+                          onPressed: () => _activityController.toggleVisibility(a),
                         ),
-                      );
-                      if (confirm == true) {
-                        await _activityController.delete(a.id);
-                      }
-                    },
-                  ),
-                ],
-              ),
+                        IconButton(
+                          tooltip: 'Editar',
+                          icon: const Icon(Icons.edit_outlined),
+                          onPressed: () => _openEditDialog(a),
+                        ),
+                        IconButton(
+                          tooltip: 'Eliminar',
+                          icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
+                          onPressed: () async {
+                            final confirm = await showDialog<bool>(
+                              context: context,
+                              builder: (_) => AlertDialog(
+                                title: const Text('Eliminar actividad'),
+                                content: Text('¿Deseas eliminar "${a.name}"?'),
+                                actions: [
+                                  TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
+                                  TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Eliminar')),
+                                ],
+                              ),
+                            );
+                            if (confirm == true) {
+                              await _activityController.delete(a.id);
+                            }
+                          },
+                        ),
+                      ],
+                    )
+                  : null,
             );
           },
         );
       }),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _openCreateDialog,
-        child: const Icon(Icons.add),
-      ),
+      floatingActionButton: _isTeacher
+          ? FloatingActionButton(
+              onPressed: _openCreateDialog,
+              child: const Icon(Icons.add),
+            )
+          : null,
     );
   }
 }

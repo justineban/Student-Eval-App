@@ -124,6 +124,7 @@ class CategoryController extends GetxController {
       'courseId': category.courseId,
       'categoryId': category.id,
       'categoryName': category.name,
+      'isManual': !category.randomGroups,
     });
   }
 }

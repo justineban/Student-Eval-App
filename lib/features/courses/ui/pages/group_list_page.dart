@@ -4,14 +4,14 @@ import '../controllers/group_controller.dart';
 import '../controllers/course_controller.dart';
 import '../../../auth/data/datasources/auth_local_datasource.dart';
 import '../../../auth/ui/controllers/auth_controller.dart';
-import '../../../assessments/ui/controllers/category_controller.dart';
 import '../../domain/models/group_model.dart';
 
 class CourseGroupListPage extends StatefulWidget {
   final String courseId;
   final String categoryId;
   final String categoryName;
-  const CourseGroupListPage({super.key, required this.courseId, required this.categoryId, required this.categoryName});
+  final bool isManualCategory;
+  const CourseGroupListPage({super.key, required this.courseId, required this.categoryId, required this.categoryName, required this.isManualCategory});
 
   @override
   State<CourseGroupListPage> createState() => _CourseGroupListPageState();
@@ -20,20 +20,19 @@ class CourseGroupListPage extends StatefulWidget {
 class _CourseGroupListPageState extends State<CourseGroupListPage> {
   late final CourseGroupController _controller;
   late final AuthController _auth;
-  late final CategoryController _categoryCtrl;
   bool _isTeacher = false;
-  bool _isManualCategory = true; // default; will resolve from category
+  late final bool _isManualCategory;
   @override
   void initState() {
     super.initState();
     _controller = Get.find<CourseGroupController>();
     _auth = Get.find<AuthController>();
-    _categoryCtrl = Get.find<CategoryController>();
     _controller.load(widget.categoryId);
-    _initRoleAndCategory();
+    _isManualCategory = widget.isManualCategory;
+    _initRole();
   }
 
-  Future<void> _initRoleAndCategory() async {
+  Future<void> _initRole() async {
     // Determine teacher role based on courseId
     try {
       final courseCtrl = Get.find<CourseController>();
@@ -42,14 +41,6 @@ class _CourseGroupListPageState extends State<CourseGroupListPage> {
       _isTeacher = (course?.teacherId == uid);
     } catch (_) {
       _isTeacher = false;
-    }
-    // Determine if category is manual (not random)
-    try {
-      await _categoryCtrl.load(widget.courseId);
-      final cat = _categoryCtrl.categories.firstWhereOrNull((c) => c.id == widget.categoryId);
-      _isManualCategory = !(cat?.randomGroups ?? false);
-    } catch (_) {
-      _isManualCategory = true;
     }
     if (mounted) setState(() {});
   }
@@ -298,6 +289,14 @@ class _CourseGroupListPageState extends State<CourseGroupListPage> {
                               categoryId: g.categoryId,
                               currentUserId: _auth.currentUser.value?.id ?? '',
                               canAdd: _controller.canAddToGroup(g.id),
+                            ),
+                          if (!_isTeacher && !_isManualCategory)
+                            const Padding(
+                              padding: EdgeInsets.only(top: 4),
+                              child: Text(
+                                'Esta categoría asigna grupos al azar. No es posible unirse manualmente.',
+                                style: TextStyle(fontSize: 12, color: Colors.grey),
+                              ),
                             ),
                         ],
                       ),

@@ -6,6 +6,10 @@ import '../../domain/models/assessment_model.dart';
 import '../controllers/activity_controller.dart';
 import '../controllers/category_controller.dart';
 import '../controllers/assessment_controller.dart';
+import '../../../auth/ui/controllers/auth_controller.dart';
+import '../../../courses/ui/controllers/course_controller.dart';
+import 'activity_evaluation_page.dart';
+import 'received_evaluations_page.dart';
 
 class ActivityDetailPage extends StatefulWidget {
   final ActivityModel activity;
@@ -19,6 +23,8 @@ class _ActivityDetailPageState extends State<ActivityDetailPage> {
   late final ActivityController _activityController;
   late final CategoryController _categoryController;
   late final AssessmentController _assessmentController;
+  late final AuthController _authController;
+  bool _isTeacher = false;
 
   final _createTitleCtrl = TextEditingController();
   final _createDurationCtrl = TextEditingController(text: '60');
@@ -45,8 +51,10 @@ class _ActivityDetailPageState extends State<ActivityDetailPage> {
       );
     }
     _assessmentController = Get.find<AssessmentController>();
+  _authController = Get.find<AuthController>();
     // Load any existing assessment for this activity
     _assessmentController.loadForActivity(widget.activity.id);
+  _initRole();
     // Simple ticker to refresh countdown every second
     _tickTimer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (mounted) setState(() {});
@@ -93,15 +101,16 @@ class _ActivityDetailPageState extends State<ActivityDetailPage> {
               ],
             ),
             const SizedBox(height: 16),
-            SwitchListTile(
-              contentPadding: EdgeInsets.zero,
-              title: const Text('Visible para estudiantes'),
-              value: a.visible,
-              onChanged: (v) async {
-                await _activityController.toggleVisibility(a);
-                if (mounted) setState(() {});
-              },
-            ),
+            if (_isTeacher)
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Visible para estudiantes'),
+                value: a.visible,
+                onChanged: (v) async {
+                  await _activityController.toggleVisibility(a);
+                  if (mounted) setState(() {});
+                },
+              ),
             const SizedBox(height: 16),
             const Text('Descripción', style: TextStyle(fontWeight: FontWeight.w600)),
             const SizedBox(height: 6),
@@ -127,15 +136,19 @@ class _ActivityDetailPageState extends State<ActivityDetailPage> {
               }
 
               if (current == null) {
-                // Only a button to open creation modal
-                return SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    onPressed: () => _openCreateAssessmentDialog(context, a),
-                    icon: const Icon(Icons.play_arrow_rounded),
-                    label: const Text('Iniciar evaluación'),
-                  ),
-                );
+                // Solo el docente puede iniciar evaluación
+                if (_isTeacher) {
+                  return SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: () => _openCreateAssessmentDialog(context, a),
+                      icon: const Icon(Icons.play_arrow_rounded),
+                      label: const Text('Iniciar evaluación'),
+                    ),
+                  );
+                } else {
+                  return const SizedBox.shrink();
+                }
               }
 
               // If cancelled, inform and disable actions
@@ -164,11 +177,13 @@ class _ActivityDetailPageState extends State<ActivityDetailPage> {
                     secondChild: _EvaluationPanel(
                       assessment: current,
                       remainingText: remainingText,
-                      onToggleGrades: isCancelled ? null : () => _assessmentController.toggleGradesVisibility(),
-                      onEdit: isCancelled
+                      isTeacher: _isTeacher,
+                      showViewGrades: _isTeacher ? true : current.gradesVisible,
+                      onToggleGrades: !_isTeacher || isCancelled ? null : () => _assessmentController.toggleGradesVisibility(),
+                      onEdit: !_isTeacher || isCancelled
                           ? null
                           : () => _showEditAssessmentDialog(current),
-                      onCancel: isCancelled
+                      onCancel: !_isTeacher || isCancelled
                           ? null
                           : () async {
                               final confirm = await _confirm(context, '¿Cancelar evaluación?', 'Se eliminará la evaluación y podrás crear una nueva.');
@@ -183,9 +198,14 @@ class _ActivityDetailPageState extends State<ActivityDetailPage> {
                               }
                             },
                       onViewGrades: () {
-                        // Placeholder: navigate or show grades. Hook to real grades UI when available.
-                        Get.snackbar('Notas', 'Aquí se mostrarán las notas de la evaluación');
+                        Get.to(() => ReceivedEvaluationsPage(activity: a, assessment: current));
                       },
+                      onEvaluate: _isTeacher || isCancelled
+                          ? null
+                          : () {
+                              // Student-only: navigate to evaluation page
+                              Get.to(() => ActivityEvaluationPage(activity: a, assessment: current));
+                            },
                     ),
                     crossFadeState: _panelOpen ? CrossFadeState.showSecond : CrossFadeState.showFirst,
                     duration: const Duration(milliseconds: 200),
@@ -203,6 +223,17 @@ class _ActivityDetailPageState extends State<ActivityDetailPage> {
         ),
       ),
     );
+  }
+  Future<void> _initRole() async {
+    try {
+      final courseCtrl = Get.find<CourseController>();
+      final userId = _authController.currentUser.value?.id;
+      final course = courseCtrl.courses.firstWhereOrNull((c) => c.id == widget.activity.courseId);
+      _isTeacher = (course?.teacherId == userId);
+    } catch (_) {
+      _isTeacher = false;
+    }
+    if (mounted) setState(() {});
   }
 
   String _formatDuration(Duration d) {
@@ -335,18 +366,24 @@ class _ActivityDetailPageState extends State<ActivityDetailPage> {
 class _EvaluationPanel extends StatelessWidget {
   final AssessmentModel assessment;
   final String remainingText;
+  final bool isTeacher;
+  final bool showViewGrades;
   final VoidCallback? onToggleGrades;
   final VoidCallback? onEdit;
   final VoidCallback? onCancel;
   final VoidCallback? onViewGrades;
+  final VoidCallback? onEvaluate;
 
   const _EvaluationPanel({
     required this.assessment,
     required this.remainingText,
+    required this.isTeacher,
+    required this.showViewGrades,
     this.onToggleGrades,
     this.onEdit,
     this.onCancel,
     this.onViewGrades,
+    this.onEvaluate,
   });
 
   @override
@@ -356,7 +393,7 @@ class _EvaluationPanel extends StatelessWidget {
       margin: const EdgeInsets.only(top: 8),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceVariant,
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(8),
       ),
       child: Column(
@@ -385,43 +422,59 @@ class _EvaluationPanel extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 8),
-          Row(
-            children: [
-              const Text('Notas visibles'),
-              const SizedBox(width: 8),
-              Switch(
-                value: assessment.gradesVisible,
-                onChanged: onToggleGrades == null ? null : (_) => onToggleGrades!(),
-              ),
-            ],
-          ),
+          if (isTeacher)
+            Row(
+              children: [
+                const Text('Notas visibles'),
+                const SizedBox(width: 8),
+                Switch(
+                  value: assessment.gradesVisible,
+                  onChanged: onToggleGrades == null ? null : (_) => onToggleGrades!(),
+                ),
+              ],
+            ),
           const SizedBox(height: 8),
           Row(
             children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: onEdit,
-                  icon: const Icon(Icons.edit_outlined),
-                  label: const Text('Editar'),
+              if (isTeacher) ...[
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: onEdit,
+                    icon: const Icon(Icons.edit_outlined),
+                    label: const Text('Editar'),
+                  ),
                 ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: onViewGrades,
-                  icon: const Icon(Icons.grade_outlined),
-                  label: const Text('Ver notas'),
+                const SizedBox(width: 8),
+              ],
+              if (showViewGrades)
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: onViewGrades,
+                    icon: const Icon(Icons.grade_outlined),
+                    label: const Text('Ver notas'),
+                  ),
                 ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: FilledButton.icon(
-                  onPressed: onCancel,
-                  style: FilledButton.styleFrom(backgroundColor: Theme.of(context).colorScheme.error),
-                  icon: const Icon(Icons.cancel_outlined),
-                  label: const Text('Cancelar'),
+              if (!isTeacher) ...[
+                if (showViewGrades) const SizedBox(width: 8),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: onEvaluate,
+                    icon: const Icon(Icons.checklist_outlined),
+                    label: const Text('Evaluar'),
+                  ),
                 ),
-              ),
+              ],
+              if (isTeacher) ...[
+                const SizedBox(width: 8),
+                Expanded(
+                  child: FilledButton.icon(
+                    onPressed: onCancel,
+                    style: FilledButton.styleFrom(backgroundColor: Theme.of(context).colorScheme.error),
+                    icon: const Icon(Icons.cancel_outlined),
+                    label: const Text('Cancelar'),
+                  ),
+                ),
+              ],
             ],
           ),
         ],

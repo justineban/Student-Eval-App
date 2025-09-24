@@ -185,7 +185,7 @@ class HiveCourseLocalDataSource implements CourseLocalDataSource {
           if (key is String && key.startsWith('assessment_by_activity_')) {
             final assessmentId = assessmentsBox.get(key);
             if (assessmentId is String) {
-              final data = assessmentsBox.get('assessment_' + assessmentId);
+              final data = assessmentsBox.get('assessment_$assessmentId');
               if (data == null || (data is Map && data['courseId'] == id)) {
                 toDeleteIndex.add(key);
               }

@@ -37,9 +37,7 @@ class CourseController extends GetxController {
       final authLocal = Get.find<AuthLocalDataSource>();
       final trimmed = email.trim();
       var target = await authLocal.fetchUserByEmail(trimmed);
-      if (target == null) {
-        target = await authLocal.fetchUserByEmail(trimmed.toLowerCase());
-      }
+      target ??= await authLocal.fetchUserByEmail(trimmed.toLowerCase());
       if (target == null) {
         inviteError.value = 'El correo no pertenece a ningún usuario registrado';
         return;

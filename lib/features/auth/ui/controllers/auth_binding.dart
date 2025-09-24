@@ -39,6 +39,11 @@ import '../../../assessments/domain/use_cases/create_assessment_use_case.dart';
 import '../../../assessments/domain/use_cases/get_assessment_by_activity_use_case.dart';
 import '../../../assessments/domain/use_cases/update_assessment_use_case.dart';
 import '../../../assessments/domain/use_cases/delete_assessment_by_activity_use_case.dart';
+import '../../../assessments/data/datasources/peer_evaluation_local_datasource.dart';
+import '../../../assessments/data/repositories/peer_evaluation_repository_impl.dart';
+import '../../../assessments/domain/repositories/peer_evaluation_repository.dart';
+import '../../../assessments/domain/use_cases/save_peer_evaluations_use_case.dart';
+import '../../../assessments/domain/use_cases/get_received_peer_evaluations_use_case.dart';
 import '../../../courses/data/datasources/group_local_datasource.dart';
 import '../../../courses/data/repositories/group_repository_impl.dart';
 import '../../../courses/domain/repositories/group_repository.dart';
@@ -147,6 +152,12 @@ class AuthBinding extends Bindings {
   Get.lazyPut(() => RemoveMemberFromGroupUseCase(Get.find<CourseGroupRepository>()), fenix: true);
   Get.lazyPut(() => MoveMemberBetweenGroupsUseCase(Get.find<CourseGroupRepository>()), fenix: true);
   Get.lazyPut(() => TrimGroupsToCapacityUseCase(Get.find<CourseGroupRepository>()), fenix: true);
+
+    // Peer evaluations wiring
+    Get.lazyPut<PeerEvaluationLocalDataSource>(() => HivePeerEvaluationLocalDataSource(), fenix: true);
+    Get.lazyPut<PeerEvaluationRepository>(() => PeerEvaluationRepositoryImpl(local: Get.find()), fenix: true);
+    Get.lazyPut(() => SavePeerEvaluationsUseCase(Get.find<PeerEvaluationRepository>()), fenix: true);
+  Get.lazyPut(() => GetReceivedPeerEvaluationsUseCase(Get.find<PeerEvaluationRepository>()), fenix: true);
 
     // Controllers for assessments domain
     Get.put(CategoryController(

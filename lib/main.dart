@@ -4,6 +4,7 @@ import 'features/auth/ui/pages/login_page.dart';
 import 'features/auth/ui/controllers/auth_binding.dart';
 import 'core/storage/hive_init.dart';
 import 'features/courses/ui/pages/group_list_page.dart';
+import 'features/courses/ui/pages/enroll_course_page.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -33,8 +34,13 @@ class MyApp extends StatelessWidget {
                 courseId: map['courseId'] as String? ?? '',
                 categoryId: map['categoryId'] as String? ?? '',
                 categoryName: map['categoryName'] as String? ?? 'Categoría',
+                isManualCategory: map['isManual'] as bool? ?? true,
               );
             },
+          ),
+          GetPage(
+            name: '/enroll',
+            page: () => const EnrollCoursePage(),
           ),
         ],
         home: const LoginPage(),
