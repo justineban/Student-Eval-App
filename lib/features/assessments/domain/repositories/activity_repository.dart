@@ -10,4 +10,14 @@ abstract class ActivityRepository {
     required bool visible,
   });
   Future<List<ActivityModel>> getActivitiesByCourse(String courseId);
+  Future<ActivityModel> updateActivity({
+    required String id,
+    required String courseId,
+    required String categoryId,
+    required String name,
+    required String description,
+    DateTime? dueDate,
+    required bool visible,
+  });
+  Future<void> deleteActivity(String id);
 }

@@ -24,4 +24,29 @@ class ActivityRepositoryImpl implements ActivityRepository {
 
   @override
   Future<List<ActivityModel>> getActivitiesByCourse(String courseId) => local.fetchByCourse(courseId);
+
+  @override
+  Future<ActivityModel> updateActivity({
+    required String id,
+    required String courseId,
+    required String categoryId,
+    required String name,
+    required String description,
+    DateTime? dueDate,
+    required bool visible,
+  }) async {
+    final activity = ActivityModel(
+      id: id,
+      courseId: courseId,
+      categoryId: categoryId,
+      name: name,
+      description: description,
+      dueDate: dueDate,
+      visible: visible,
+    );
+    return await local.update(activity);
+  }
+
+  @override
+  Future<void> deleteActivity(String id) => local.delete(id);
 }

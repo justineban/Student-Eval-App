@@ -23,6 +23,8 @@ import '../../../assessments/domain/use_cases/update_category_use_case.dart';
 import '../../../assessments/domain/use_cases/delete_category_use_case.dart';
 import '../../../assessments/domain/use_cases/create_activity_use_case.dart';
 import '../../../assessments/domain/use_cases/get_activities_use_case.dart';
+import '../../../assessments/domain/use_cases/update_activity_use_case.dart';
+import '../../../assessments/domain/use_cases/delete_activity_use_case.dart';
 import '../../../assessments/ui/controllers/category_controller.dart';
 import '../../../assessments/ui/controllers/activity_controller.dart';
 import '../../../courses/data/datasources/group_local_datasource.dart';
@@ -100,7 +102,9 @@ class AuthBinding extends Bindings {
   Get.lazyPut(() => UpdateCategoryUseCase(Get.find<CategoryRepository>()), fenix: true);
   Get.lazyPut(() => DeleteCategoryUseCase(Get.find<CategoryRepository>()), fenix: true);
     Get.lazyPut(() => CreateActivityUseCase(activityRepository: Get.find<ActivityRepository>(), categoryRepository: Get.find<CategoryRepository>()), fenix: true);
-    Get.lazyPut(() => GetActivitiesUseCase(Get.find<ActivityRepository>()), fenix: true);
+  Get.lazyPut(() => GetActivitiesUseCase(Get.find<ActivityRepository>()), fenix: true);
+  Get.lazyPut(() => UpdateActivityUseCase(Get.find<ActivityRepository>()), fenix: true);
+  Get.lazyPut(() => DeleteActivityUseCase(Get.find<ActivityRepository>()), fenix: true);
   Get.lazyPut(() => CreateCourseGroupUseCase(Get.find<CourseGroupRepository>()), fenix: true);
   Get.lazyPut(() => GetCourseGroupsUseCase(Get.find<CourseGroupRepository>()), fenix: true);
   Get.lazyPut(() => DeleteCourseGroupUseCase(Get.find<CourseGroupRepository>()), fenix: true);
@@ -118,6 +122,8 @@ class AuthBinding extends Bindings {
         () => ActivityController(
           createActivityUseCase: Get.find(),
           getActivitiesUseCase: Get.find(),
+          updateActivityUseCase: Get.find(),
+          deleteActivityUseCase: Get.find(),
         ),
         fenix: true,
       );

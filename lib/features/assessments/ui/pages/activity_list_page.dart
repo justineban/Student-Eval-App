@@ -3,6 +3,8 @@ import 'package:get/get.dart';
 import '../controllers/activity_controller.dart';
 import '../controllers/category_controller.dart';
 import '../../../courses/ui/controllers/course_controller.dart';
+import '../../domain/models/activity_model.dart';
+import 'activity_detail_page.dart';
 
 class ActivityListPage extends StatefulWidget {
   const ActivityListPage({super.key});
@@ -24,6 +26,8 @@ class _ActivityListPageState extends State<ActivityListPage> {
         ActivityController(
           createActivityUseCase: Get.find(),
           getActivitiesUseCase: Get.find(),
+          updateActivityUseCase: Get.find(),
+          deleteActivityUseCase: Get.find(),
         ),
         permanent: true,
       );
@@ -55,6 +59,8 @@ class _ActivityListPageState extends State<ActivityListPage> {
       _categoryController.load(_courseId!);
     }
   }
+
+  // no-op
 
   void _openCreateDialog() {
     if (_courseId == null) {
@@ -179,6 +185,119 @@ class _ActivityListPageState extends State<ActivityListPage> {
     );
   }
 
+  void _openEditDialog(ActivityModel activity) {
+    final nameCtrl = TextEditingController(text: activity.name);
+    final descCtrl = TextEditingController(text: activity.description);
+    final formKey = GlobalKey<FormState>();
+    final visible = RxBool(activity.visible);
+    final selectedCategory = Rx<String?>(activity.categoryId);
+    final dueDate = Rx<DateTime?>(activity.dueDate);
+
+    Future<void> pickDate() async {
+      final now = DateTime.now();
+      final picked = await showDatePicker(
+        context: context,
+        firstDate: now.subtract(const Duration(days: 1)),
+        lastDate: DateTime(now.year + 3),
+        initialDate: dueDate.value ?? now,
+      );
+      if (picked != null) dueDate.value = picked;
+    }
+
+    showDialog(
+      context: context,
+      builder: (_) => Dialog(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Form(
+            key: formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Editar Actividad', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 12),
+                Obx(() => DropdownButtonFormField<String>(
+                      value: selectedCategory.value,
+                      items: _categoryController.categories
+                          .map((c) => DropdownMenuItem(value: c.id, child: Text(c.name)))
+                          .toList(),
+                      onChanged: (v) => selectedCategory.value = v,
+                      decoration: const InputDecoration(labelText: 'Categoría', border: OutlineInputBorder()),
+                    )),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: nameCtrl,
+                  decoration: const InputDecoration(labelText: 'Nombre', border: OutlineInputBorder()),
+                  validator: (v) => (v == null || v.trim().isEmpty) ? 'Requerido' : null,
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: descCtrl,
+                  decoration: const InputDecoration(labelText: 'Descripción', border: OutlineInputBorder()),
+                  maxLines: 3,
+                  validator: (v) => (v == null || v.trim().isEmpty) ? 'Requerido' : null,
+                ),
+                const SizedBox(height: 12),
+                Obx(() => Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            dueDate.value == null
+                                ? 'Sin fecha límite'
+                                : 'Fecha límite: ${dueDate.value!.day}/${dueDate.value!.month}/${dueDate.value!.year}',
+                            style: const TextStyle(fontSize: 12),
+                          ),
+                        ),
+                        IconButton(
+                          onPressed: pickDate,
+                          icon: const Icon(Icons.calendar_month_outlined),
+                          tooltip: 'Seleccionar fecha',
+                        ),
+                      ],
+                    )),
+                const SizedBox(height: 8),
+                Obx(() => SwitchListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text('Visible para estudiantes'),
+                      value: visible.value,
+                      onChanged: (v) => visible.value = v,
+                    )),
+                const SizedBox(height: 12),
+                Obx(() => _activityController.updating.value
+                    ? const Center(child: Padding(padding: EdgeInsets.all(8), child: CircularProgressIndicator(strokeWidth: 2)))
+                    : Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
+                          const SizedBox(width: 8),
+                          ElevatedButton(
+                            onPressed: () async {
+                              if (!formKey.currentState!.validate()) return;
+                              final updatedModel = ActivityModel(
+                                id: activity.id,
+                                courseId: activity.courseId,
+                                categoryId: selectedCategory.value ?? activity.categoryId,
+                                name: nameCtrl.text.trim(),
+                                description: descCtrl.text.trim(),
+                                dueDate: dueDate.value,
+                                visible: visible.value,
+                              );
+                              final updated = await _activityController.updateActivity(updatedModel);
+                              if (updated != null && mounted) Navigator.pop(context);
+                            },
+                            child: const Text('Guardar'),
+                          ),
+                        ],
+                      )),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -194,12 +313,47 @@ class _ActivityListPageState extends State<ActivityListPage> {
           separatorBuilder: (_, __) => const Divider(height: 1),
           itemBuilder: (_, i) {
             final a = _activityController.activities[i];
+            var category = null as dynamic;
+            for (final c in _categoryController.categories) { if (c.id == a.categoryId) { category = c; break; } }
             return ListTile(
+              onTap: () => Get.to(() => ActivityDetailPage(activity: a)),
               title: Text(a.name),
-              subtitle: Text(a.visible ? 'Visible' : 'Oculta'),
-              trailing: a.dueDate == null
-                  ? null
-                  : Text('${a.dueDate!.day}/${a.dueDate!.month}/${a.dueDate!.year}', style: const TextStyle(fontSize: 12)),
+              subtitle: Text('Categoría: ${category?.name ?? '—'}'),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    tooltip: a.visible ? 'Ocultar' : 'Mostrar',
+                    icon: Icon(a.visible ? Icons.visibility : Icons.visibility_off),
+                    onPressed: () => _activityController.toggleVisibility(a),
+                  ),
+                  IconButton(
+                    tooltip: 'Editar',
+                    icon: const Icon(Icons.edit_outlined),
+                    onPressed: () => _openEditDialog(a),
+                  ),
+                  IconButton(
+                    tooltip: 'Eliminar',
+                    icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
+                    onPressed: () async {
+                      final confirm = await showDialog<bool>(
+                        context: context,
+                        builder: (_) => AlertDialog(
+                          title: const Text('Eliminar actividad'),
+                          content: Text('¿Deseas eliminar "${a.name}"?'),
+                          actions: [
+                            TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
+                            TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Eliminar')),
+                          ],
+                        ),
+                      );
+                      if (confirm == true) {
+                        await _activityController.delete(a.id);
+                      }
+                    },
+                  ),
+                ],
+              ),
             );
           },
         );

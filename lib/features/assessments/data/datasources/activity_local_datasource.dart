@@ -5,6 +5,8 @@ import '../../domain/models/activity_model.dart';
 abstract class ActivityLocalDataSource {
   Future<ActivityModel> save(ActivityModel activity);
   Future<List<ActivityModel>> fetchByCourse(String courseId);
+  Future<ActivityModel> update(ActivityModel activity);
+  Future<void> delete(String id);
 }
 
 class HiveActivityLocalDataSource implements ActivityLocalDataSource {
@@ -37,6 +39,26 @@ class HiveActivityLocalDataSource implements ActivityLocalDataSource {
       }
     }
     return result;
+  }
+
+  @override
+  Future<ActivityModel> update(ActivityModel activity) async {
+    // For Hive, update is same as put with same key
+    await _box.put(activity.id, {
+      'id': activity.id,
+      'courseId': activity.courseId,
+      'categoryId': activity.categoryId,
+      'name': activity.name,
+      'description': activity.description,
+      'dueDate': activity.dueDate?.toIso8601String(),
+      'visible': activity.visible,
+    });
+    return activity;
+  }
+
+  @override
+  Future<void> delete(String id) async {
+    await _box.delete(id);
   }
 
   ActivityModel _fromMap(Map map) => ActivityModel(
