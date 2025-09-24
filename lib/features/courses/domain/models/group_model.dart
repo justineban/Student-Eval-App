@@ -11,5 +11,5 @@ class GroupModel {
     required this.categoryId,
     required this.name,
     List<String>? memberIds,
-  }) : memberIds = memberIds ?? [];
+  })  : memberIds = memberIds ?? [];
 }

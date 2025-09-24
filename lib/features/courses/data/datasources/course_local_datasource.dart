@@ -8,6 +8,10 @@ abstract class CourseLocalDataSource {
   Future<CourseModel?> fetchCourseById(String id);
   Future<CourseModel> updateCourse(CourseModel course);
   Future<void> deleteCourse(String id);
+  // Student-side helpers
+  Future<CourseModel?> fetchCourseByRegistrationCode(String code);
+  Future<List<CourseModel>> fetchCoursesByStudent(String studentId);
+  Future<List<CourseModel>> fetchInvitedCoursesForEmail(String email);
 }
 
 class InMemoryCourseLocalDataSource implements CourseLocalDataSource {
@@ -45,6 +49,25 @@ class InMemoryCourseLocalDataSource implements CourseLocalDataSource {
   @override
   Future<void> deleteCourse(String id) async {
     _courses.removeWhere((c) => c.id == id);
+  }
+
+  @override
+  Future<CourseModel?> fetchCourseByRegistrationCode(String code) async {
+    try {
+      return _courses.firstWhere((c) => c.registrationCode == code);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  @override
+  Future<List<CourseModel>> fetchCoursesByStudent(String studentId) async {
+    return _courses.where((c) => c.studentIds.contains(studentId)).toList();
+  }
+
+  @override
+  Future<List<CourseModel>> fetchInvitedCoursesForEmail(String email) async {
+    return _courses.where((c) => c.invitations.contains(email)).toList();
   }
 }
 
@@ -184,6 +207,47 @@ class HiveCourseLocalDataSource implements CourseLocalDataSource {
         studentIds: (map['studentIds'] as List?)?.cast<String>(),
         invitations: (map['invitations'] as List?)?.cast<String>(),
       );
+
+  @override
+  Future<CourseModel?> fetchCourseByRegistrationCode(String code) async {
+    for (final key in _coursesBox.keys) {
+      final data = _coursesBox.get(key);
+      if (data is Map && data['registrationCode'] == code) {
+        return _fromMap(data);
+      }
+    }
+    return null;
+  }
+
+  @override
+  Future<List<CourseModel>> fetchCoursesByStudent(String studentId) async {
+    final result = <CourseModel>[];
+    for (final key in _coursesBox.keys) {
+      final data = _coursesBox.get(key);
+      if (data is Map) {
+        final students = (data['studentIds'] as List?)?.cast<String>() ?? const <String>[];
+        if (students.contains(studentId)) {
+          result.add(_fromMap(data));
+        }
+      }
+    }
+    return result;
+  }
+
+  @override
+  Future<List<CourseModel>> fetchInvitedCoursesForEmail(String email) async {
+    final result = <CourseModel>[];
+    for (final key in _coursesBox.keys) {
+      final data = _coursesBox.get(key);
+      if (data is Map) {
+        final invitations = (data['invitations'] as List?)?.cast<String>() ?? const <String>[];
+        if (invitations.contains(email)) {
+          result.add(_fromMap(data));
+        }
+      }
+    }
+    return result;
+  }
 }
 
 // Remote datasource placeholder for future API integration

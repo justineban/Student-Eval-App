@@ -3,6 +3,8 @@ import '../../../auth/ui/controllers/auth_controller.dart';
 import '../../../auth/ui/pages/login_page.dart';
 import '../../../courses/ui/pages/course_list_page.dart';
 import '../../../courses/ui/pages/add_course_page.dart';
+import '../../../courses/ui/pages/enroll_course_page.dart';
+import '../../../courses/ui/pages/enrolled_courses_page.dart';
 
 /// HomeController orchestrates high-level navigation intents (placeholder for now).
 class HomeController extends GetxController {
@@ -20,6 +22,14 @@ class HomeController extends GetxController {
 
   void goToCreateCourse() {
     Get.to(() => const AddCoursePage());
+  }
+
+  void goToEnrollCourse() {
+    Get.to(() => const EnrollCoursePage());
+  }
+
+  void goToEnrolledCourses() {
+    Get.to(() => const EnrolledCoursesPage());
   }
 
   Future<void> logout() async {

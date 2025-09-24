@@ -48,8 +48,8 @@ class HomePage extends StatelessWidget {
               _SectionTitle('Módulo de estudiantes'),
               const SizedBox(height: 8),
               _ActionList(actions: const [
-                _ActionItem(label: 'Inscribirme a un curso'),
-                _ActionItem(label: 'Cursos inscritos'),
+                _ActionItem(label: 'Inscribirme a un curso', actionKey: 'enroll_course'),
+                _ActionItem(label: 'Cursos inscritos', actionKey: 'enrolled_courses'),
                 _ActionItem(label: 'Ver mis grupos'),
                 _ActionItem(label: 'Ver mis notas'),
                 _ActionItem(label: 'Actividades'),
@@ -98,6 +98,12 @@ class _ActionList extends StatelessWidget {
                         break;
                       case 'list_courses':
                         home.goToCourses();
+                        break;
+                      case 'enroll_course':
+                        home.goToEnrollCourse();
+                        break;
+                      case 'enrolled_courses':
+                        home.goToEnrolledCourses();
                         break;
                       default:
                         // otros aun no implementados

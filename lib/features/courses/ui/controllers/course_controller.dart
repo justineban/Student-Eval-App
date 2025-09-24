@@ -5,6 +5,7 @@ import '../../domain/use_cases/get_teacher_courses_use_case.dart';
 import '../../domain/use_cases/invite_student_use_case.dart';
 import '../../domain/use_cases/update_course_use_case.dart';
 import '../../domain/use_cases/delete_course_use_case.dart';
+import '../../../auth/data/datasources/auth_local_datasource.dart';
 
 class CourseController extends GetxController {
   final CreateCourseUseCase createCourseUseCase;
@@ -32,6 +33,18 @@ class CourseController extends GetxController {
     inviteLoading.value = true;
     inviteError.value = null;
     try {
+      // Validate that the target email belongs to a registered user
+      final authLocal = Get.find<AuthLocalDataSource>();
+      final trimmed = email.trim();
+      var target = await authLocal.fetchUserByEmail(trimmed);
+      if (target == null) {
+        target = await authLocal.fetchUserByEmail(trimmed.toLowerCase());
+      }
+      if (target == null) {
+        inviteError.value = 'El correo no pertenece a ningún usuario registrado';
+        return;
+      }
+
       final updated = await inviteStudentUseCase(courseId: courseId, teacherId: teacherId, email: email);
       final idx = courses.indexWhere((c) => c.id == updated.id);
       if (idx != -1) {

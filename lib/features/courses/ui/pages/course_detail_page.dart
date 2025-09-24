@@ -4,6 +4,7 @@ import '../../domain/models/course_model.dart';
 import '../../../auth/ui/controllers/auth_controller.dart';
 import '../../ui/controllers/course_controller.dart';
 import '../../../assessments/ui/pages/activity_list_page.dart';
+import '../../../auth/data/datasources/auth_local_datasource.dart';
 import 'category_list_page.dart';
 
 class CourseDetailPage extends StatefulWidget {
@@ -34,6 +35,7 @@ class _CourseDetailPageState extends State<CourseDetailPage> {
   }
 
   bool get _isTeacher => _auth.currentUser.value?.id == widget.course.teacherId;
+  final _authLocal = HiveAuthLocalDataSource();
 
   CourseModel _currentCourseSnapshot() {
     // Buscar versión reactiva actualizada en la lista, si existe
@@ -209,9 +211,18 @@ class _CourseDetailPageState extends State<CourseDetailPage> {
                     const SizedBox(height: 8),
                     Text(course.description),
                     const SizedBox(height: 12),
+                    FutureBuilder(
+                      future: _authLocal.fetchUserById(course.teacherId),
+                      builder: (context, snapshot) {
+                        final name = snapshot.data?.name ?? 'Docente';
+                        return Text('Docente: $name', style: const TextStyle(color: Colors.grey));
+                      },
+                    ),
+                    const SizedBox(height: 8),
                     Row(
                       children: [
-                        Text('Código: ${course.registrationCode}', style: const TextStyle(color: Colors.grey)),
+                        if (_isTeacher)
+                          Text('Código: ${course.registrationCode}', style: const TextStyle(color: Colors.grey)),
                         const Spacer(),
                         if (_isTeacher) ...[
                           IconButton(
@@ -241,11 +252,22 @@ class _CourseDetailPageState extends State<CourseDetailPage> {
                           : ListView.builder(
                               shrinkWrap: true,
                               itemCount: course.studentIds.length,
-                              itemBuilder: (_, i) => ListTile(
-                                dense: true,
-                                leading: const Icon(Icons.person_outline),
-                                title: Text('Student ${course.studentIds[i]}'),
-                              ),
+                              itemBuilder: (_, i) {
+                                final studentId = course.studentIds[i];
+                                return FutureBuilder(
+                                  future: _authLocal.fetchUserById(studentId),
+                                  builder: (context, snapshot) {
+                                    final isMe = _auth.currentUser.value?.id == studentId;
+                                    final displayName = snapshot.data?.name ?? 'Estudiante';
+                                    return ListTile(
+                                      dense: true,
+                                      leading: const Icon(Icons.person_outline),
+                                      title: Text(isMe ? '$displayName (tú)' : displayName),
+                                      subtitle: snapshot.hasData ? Text(snapshot.data!.email) : null,
+                                    );
+                                  },
+                                );
+                              },
                             ),
                     ),
                     const SizedBox(height: 24),

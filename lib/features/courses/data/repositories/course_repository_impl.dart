@@ -50,8 +50,9 @@ class CourseRepositoryImpl implements CourseRepository {
       throw Exception('Email requerido');
     }
     // evitar duplicados
-    if (!course.invitations.contains(email)) {
-      course.invitations.add(email);
+    final normalized = email.trim().toLowerCase();
+    if (!course.invitations.contains(normalized)) {
+      course.invitations.add(normalized);
       await local.updateCourse(course);
       // TODO: remote sync invitation
     }
@@ -79,5 +80,51 @@ class CourseRepositoryImpl implements CourseRepository {
     if (existing == null) return;
     if (existing.teacherId != teacherId) throw Exception('No autorizado');
     await local.deleteCourse(id);
+  }
+
+  // Student-side operations
+  @override
+  Future<CourseModel?> getCourseByRegistrationCode(String code) async {
+    return await local.fetchCourseByRegistrationCode(code.trim().toUpperCase());
+  }
+
+  @override
+  Future<CourseModel?> joinCourseByCode({required String code, required String studentId}) async {
+    final normalized = code.trim().toUpperCase();
+    if (normalized.isEmpty) return null;
+    final course = await local.fetchCourseByRegistrationCode(normalized);
+    if (course == null) return null;
+    if (!course.studentIds.contains(studentId)) {
+      course.studentIds.add(studentId);
+      // if there was a pending invitation for this student via email, keep as-is (email unknown here)
+      await local.updateCourse(course);
+    }
+    return course;
+  }
+
+  @override
+  Future<List<CourseModel>> getCoursesByStudent(String studentId) async {
+    return await local.fetchCoursesByStudent(studentId);
+  }
+
+  @override
+  Future<List<CourseModel>> getInvitedCoursesForEmail(String email) async {
+    return await local.fetchInvitedCoursesForEmail(email.trim().toLowerCase());
+  }
+
+  @override
+  Future<CourseModel?> acceptInvitation({required String courseId, required String email, required String studentId}) async {
+    final course = await local.fetchCourseById(courseId);
+    if (course == null) return null;
+    final emailNorm = email.trim().toLowerCase();
+    // Accept only if invitation exists or allow anyway if teacher shared direct link
+    if (course.invitations.contains(emailNorm)) {
+      course.invitations.remove(emailNorm);
+    }
+    if (!course.studentIds.contains(studentId)) {
+      course.studentIds.add(studentId);
+    }
+    await local.updateCourse(course);
+    return course;
   }
 }

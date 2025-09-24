@@ -4,6 +4,7 @@ import '../../domain/use_cases/create_category_use_case.dart';
 import '../../domain/use_cases/get_categories_use_case.dart';
 import '../../domain/use_cases/update_category_use_case.dart';
 import '../../domain/use_cases/delete_category_use_case.dart';
+import '../../../courses/ui/controllers/group_controller.dart';
 
 class CategoryController extends GetxController {
   final CreateCategoryUseCase createCategoryUseCase;
@@ -66,6 +67,7 @@ class CategoryController extends GetxController {
     updating.value = true;
     error.value = null;
     try {
+      final oldMax = category.maxStudentsPerGroup;
       final updated = await updateCategoryUseCase(
         category: category,
         name: name,
@@ -75,6 +77,20 @@ class CategoryController extends GetxController {
       final idx = categories.indexWhere((c) => c.id == updated.id);
       if (idx != -1) {
         categories[idx] = updated; // triggers update
+      }
+      // If capacity decreased, trim over-capacity groups for this category
+      if (maxStudentsPerGroup != null && maxStudentsPerGroup < oldMax) {
+        // Try to call the groups controller to enforce new capacity
+        if (Get.isRegistered<dynamic>(tag: null) && Get.isRegistered<CourseGroupController>()) {
+          final gc = Get.find<CourseGroupController>();
+          await gc.trimOverCapacityGroups(updated.id, maxStudentsPerGroup);
+        } else {
+          // best effort without crashing if not available
+          try {
+            final gc = Get.find<CourseGroupController>();
+            await gc.trimOverCapacityGroups(updated.id, maxStudentsPerGroup);
+          } catch (_) {}
+        }
       }
       return updated;
     } catch (e) {
