@@ -42,7 +42,7 @@ class HomePage extends StatelessWidget {
               _ActionList(actions: const [
                 _ActionItem(label: 'Crear curso', actionKey: 'create_course'),
                 _ActionItem(label: 'Ver mis cursos', actionKey: 'list_courses'),
-                _ActionItem(label: 'Ver reporte de mis cursos'),
+                _ActionItem(label: 'Ver reporte de mis cursos', actionKey: 'teacher_courses_report'),
               ]),
               const SizedBox(height: 24),
               _SectionTitle('Módulo de estudiantes'),
@@ -113,6 +113,9 @@ class _ActionList extends StatelessWidget {
                         break;
                       case 'my_activities':
                         home.goToMyActivities();
+                        break;
+                      case 'teacher_courses_report':
+                        home.goToTeacherCoursesReport();
                         break;
                       default:
                         // otros aun no implementados

@@ -8,6 +8,7 @@ import '../../../courses/ui/pages/enrolled_courses_page.dart';
 import '../../../groups/ui/pages/my_groups_page.dart';
 import '../../../grades/ui/pages/my_grades_page.dart';
 import '../../../activities/ui/pages/my_activities_page.dart';
+import '../../../reports/ui/pages/teacher_courses_report_page.dart';
 
 /// HomeController orchestrates high-level navigation intents (placeholder for now).
 class HomeController extends GetxController {
@@ -45,6 +46,10 @@ class HomeController extends GetxController {
 
   void goToMyActivities() {
     Get.to(() => const MyActivitiesPage());
+  }
+
+  void goToTeacherCoursesReport() {
+    Get.to(() => const TeacherCoursesReportPage());
   }
 
   Future<void> logout() async {
