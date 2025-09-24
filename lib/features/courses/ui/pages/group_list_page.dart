@@ -80,72 +80,72 @@ class _CourseGroupListPageState extends State<CourseGroupListPage> {
           itemCount: _controller.groups.length,
           itemBuilder: (_, i) {
             final g = _controller.groups[i];
-            final expanded = _controller.expandedGroupIds.contains(g.id);
-            return Column(
-              children: [
-                ListTile(
-                  title: Text(g.name),
-                  leading: IconButton(
-                    icon: Icon(expanded ? Icons.expand_less : Icons.group_outlined),
-                    tooltip: expanded ? 'Ocultar integrantes' : 'Ver integrantes',
-                    onPressed: () => _controller.toggleExpanded(g.id),
-                  ),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.people_outline),
-                        tooltip: expanded ? 'Ocultar integrantes' : 'Ver integrantes',
-                        onPressed: () => _controller.toggleExpanded(g.id),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.delete_outline, color: Colors.red),
-                        onPressed: () => _confirmDelete(g.id, g.name),
-                      ),
-                    ],
-                  ),
-                ),
-                if (expanded)
-                  Container(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-                    width: double.infinity,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+            return Obx(() {
+              final expanded = _controller.expandedGroupIds.contains(g.id);
+              return Column(
+                children: [
+                  ListTile(
+                    title: Text(g.name),
+                    // Left side icon is visual only (no tap action)
+                    leading: Icon(expanded ? Icons.expand_less : Icons.group_outlined),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        ConstrainedBox(
-                          constraints: const BoxConstraints(maxHeight: 180),
-                          child: g.memberIds.isEmpty
-                              ? const Padding(
-                                  padding: EdgeInsets.symmetric(vertical: 8),
-                                  child: Text('Sin integrantes todavía', style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic)),
-                                )
-                              : Scrollbar(
-                                  child: ListView.builder(
-                                    shrinkWrap: true,
-                                    itemCount: g.memberIds.length,
-                                    itemBuilder: (_, j) => ListTile(
-                                      dense: true,
-                                      leading: const Icon(Icons.person_outline, size: 18),
-                                      title: Text(g.memberIds[j]),
-                                    ),
-                                  ),
-                                ),
+                        // Single right-side button to toggle members panel
+                        IconButton(
+                          icon: const Icon(Icons.people_outline),
+                          tooltip: expanded ? 'Ocultar integrantes' : 'Ver integrantes',
+                          onPressed: () => _controller.toggleExpanded(g.id),
                         ),
-                        const SizedBox(height: 8),
-                        Align(
-                          alignment: Alignment.centerLeft,
-                          child: FilledButton.icon(
-                            onPressed: () => _promptAddMember(g.id),
-                            icon: const Icon(Icons.person_add_alt_1_outlined, size: 18),
-                            label: const Text('Añadir integrante'),
-                          ),
+                        IconButton(
+                          icon: const Icon(Icons.delete_outline, color: Colors.red),
+                          onPressed: () => _confirmDelete(g.id, g.name),
                         ),
                       ],
                     ),
                   ),
-                const Divider(height: 1),
-              ],
-            );
+                  if (expanded)
+                    Container(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                      width: double.infinity,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          ConstrainedBox(
+                            constraints: const BoxConstraints(maxHeight: 180),
+                            child: g.memberIds.isEmpty
+                                ? const Padding(
+                                    padding: EdgeInsets.symmetric(vertical: 8),
+                                    child: Text('Sin integrantes todavía', style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic)),
+                                  )
+                                : Scrollbar(
+                                    child: ListView.builder(
+                                      shrinkWrap: true,
+                                      itemCount: g.memberIds.length,
+                                      itemBuilder: (_, j) => ListTile(
+                                        dense: true,
+                                        leading: const Icon(Icons.person_outline, size: 18),
+                                        title: Text(g.memberIds[j]),
+                                      ),
+                                    ),
+                                  ),
+                          ),
+                          const SizedBox(height: 8),
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: FilledButton.icon(
+                              onPressed: () => _promptAddMember(g.id),
+                              icon: const Icon(Icons.person_add_alt_1_outlined, size: 18),
+                              label: const Text('Añadir integrante'),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  const Divider(height: 1),
+                ],
+              );
+            });
           },
         );
       }),

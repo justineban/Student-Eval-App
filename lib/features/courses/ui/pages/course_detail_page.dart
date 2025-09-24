@@ -42,6 +42,130 @@ class _CourseDetailPageState extends State<CourseDetailPage> {
     return widget.course;
   }
 
+  void _showEditDialog() {
+    if (!_isTeacher) return;
+    final course = _currentCourseSnapshot();
+    final nameCtrl = TextEditingController(text: course.name);
+    final descCtrl = TextEditingController(text: course.description);
+    final formKey = GlobalKey<FormState>();
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) {
+        return Obx(() {
+          final saving = _courses.updating.value;
+          return AlertDialog(
+            title: const Text('Editar curso'),
+            content: Form(
+              key: formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextFormField(
+                    controller: nameCtrl,
+                    decoration: const InputDecoration(labelText: 'Nombre', border: OutlineInputBorder()),
+                    validator: (v) => (v == null || v.trim().isEmpty) ? 'Requerido' : null,
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: descCtrl,
+                    decoration: const InputDecoration(labelText: 'Descripción', border: OutlineInputBorder()),
+                    maxLines: 3,
+                    validator: (v) => (v == null || v.trim().isEmpty) ? 'Requerido' : null,
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: saving ? null : () => Get.back(),
+                child: const Text('Cancelar'),
+              ),
+              saving
+                  ? const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 12),
+                      child: SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2)),
+                    )
+                  : ElevatedButton(
+                      onPressed: () async {
+                        if (!formKey.currentState!.validate()) return;
+                        final updated = await _courses.updateCourse(
+                          id: course.id,
+                          name: nameCtrl.text.trim(),
+                          description: descCtrl.text.trim(),
+                          teacherId: course.teacherId,
+                        );
+                        if (!mounted) return;
+                        if (updated != null) {
+                          Get.back();
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Curso actualizado')),
+                          );
+                        } else {
+                          final msg = _courses.error.value ?? 'No se pudo actualizar';
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text(msg)),
+                          );
+                        }
+                      },
+                      child: const Text('Guardar'),
+                    ),
+            ],
+          );
+        });
+      },
+    );
+  }
+
+  void _confirmDelete() {
+    if (!_isTeacher) return;
+    final course = _currentCourseSnapshot();
+    showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) {
+        return Obx(() {
+          final deleting = _courses.deleting.value;
+          return AlertDialog(
+            title: const Text('Eliminar curso'),
+            content: Text('¿Deseas eliminar definitivamente "${course.name}"? Esta acción no se puede deshacer.'),
+            actions: [
+              TextButton(
+                onPressed: deleting ? null : () => Get.back(result: false),
+                child: const Text('Cancelar'),
+              ),
+              deleting
+                  ? const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 12),
+                      child: SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2)),
+                    )
+                  : TextButton(
+                      onPressed: () async {
+                        final ok = await _courses.deleteCourse(id: course.id, teacherId: course.teacherId);
+                        if (!mounted) return;
+                        if (ok) {
+                          // Close dialog and this page
+                          Get.back(result: true);
+                          if (mounted) {
+                            Navigator.of(context).pop();
+                          }
+                          Get.snackbar('Curso eliminado', '"${course.name}" se eliminó correctamente', snackPosition: SnackPosition.BOTTOM);
+                        } else {
+                          final msg = _courses.error.value ?? 'No se pudo eliminar';
+                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+                        }
+                      },
+                      style: TextButton.styleFrom(foregroundColor: Colors.red),
+                      child: const Text('Eliminar'),
+                    ),
+            ],
+          );
+        });
+      },
+    );
+  }
+
   void _onInvite() async {
     if (!_formKey.currentState!.validate()) return;
     final email = _inviteEmailCtrl.text.trim();
@@ -89,12 +213,18 @@ class _CourseDetailPageState extends State<CourseDetailPage> {
                       children: [
                         Text('Código: ${course.registrationCode}', style: const TextStyle(color: Colors.grey)),
                         const Spacer(),
-                        if (_isTeacher)
+                        if (_isTeacher) ...[
                           IconButton(
-                            onPressed: () {}, // TODO: editar
+                            onPressed: _showEditDialog,
                             icon: const Icon(Icons.edit_outlined),
-                            tooltip: 'Editar (TODO)',
+                            tooltip: 'Editar',
                           ),
+                          IconButton(
+                            onPressed: _confirmDelete,
+                            icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
+                            tooltip: 'Eliminar',
+                          ),
+                        ],
                       ],
                     ),
                     const SizedBox(height: 20),

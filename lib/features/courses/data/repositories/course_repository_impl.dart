@@ -61,4 +61,23 @@ class CourseRepositoryImpl implements CourseRepository {
   String _generateRegistrationCode() {
     return _uuid.v1().substring(0, 6).toUpperCase();
   }
+
+  @override
+  Future<CourseModel> updateCourse({required String id, required String name, required String description, required String teacherId}) async {
+    final existing = await local.fetchCourseById(id);
+    if (existing == null) throw Exception('Curso no encontrado');
+    if (existing.teacherId != teacherId) throw Exception('No autorizado');
+    existing.name = name;
+    existing.description = description;
+    final saved = await local.updateCourse(existing);
+    return saved;
+  }
+
+  @override
+  Future<void> deleteCourse({required String id, required String teacherId}) async {
+    final existing = await local.fetchCourseById(id);
+    if (existing == null) return;
+    if (existing.teacherId != teacherId) throw Exception('No autorizado');
+    await local.deleteCourse(id);
+  }
 }

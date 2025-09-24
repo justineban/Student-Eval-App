@@ -5,4 +5,6 @@ abstract class CourseRepository {
   Future<List<CourseModel>> getCoursesByTeacher(String teacherId);
   Future<CourseModel?> getCourseById(String id);
   Future<CourseModel> inviteStudent({required String courseId, required String teacherId, required String email});
+  Future<CourseModel> updateCourse({required String id, required String name, required String description, required String teacherId});
+  Future<void> deleteCourse({required String id, required String teacherId});
 }

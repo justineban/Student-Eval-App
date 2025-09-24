@@ -7,6 +7,7 @@ abstract class CourseLocalDataSource {
   Future<List<CourseModel>> fetchCoursesByTeacher(String teacherId);
   Future<CourseModel?> fetchCourseById(String id);
   Future<CourseModel> updateCourse(CourseModel course);
+  Future<void> deleteCourse(String id);
 }
 
 class InMemoryCourseLocalDataSource implements CourseLocalDataSource {
@@ -39,6 +40,11 @@ class InMemoryCourseLocalDataSource implements CourseLocalDataSource {
       _courses[index] = course;
     }
     return course;
+  }
+
+  @override
+  Future<void> deleteCourse(String id) async {
+    _courses.removeWhere((c) => c.id == id);
   }
 }
 
@@ -87,6 +93,76 @@ class HiveCourseLocalDataSource implements CourseLocalDataSource {
   Future<CourseModel> updateCourse(CourseModel course) async {
     await _coursesBox.put(course.id, _toMap(course));
     return course;
+  }
+
+  @override
+  Future<void> deleteCourse(String id) async {
+    // Get full course record first (for teacherId and cascade deletes)
+    final data = _coursesBox.get(id);
+    String? teacherId;
+    if (data is Map && data['teacherId'] is String) {
+      teacherId = data['teacherId'] as String;
+    }
+
+    // Cascade delete: categories, activities, and groups that belong to this course
+    try {
+      // Categories
+      final categoriesBox = Hive.box(HiveBoxes.categories);
+      final List<dynamic> catKeys = categoriesBox.keys.toList(growable: false);
+      final toDeleteCategories = <dynamic>[];
+      for (final key in catKeys) {
+        final c = categoriesBox.get(key);
+        if (c is Map && c['courseId'] == id) {
+          toDeleteCategories.add(key);
+        }
+      }
+      if (toDeleteCategories.isNotEmpty) {
+        await categoriesBox.deleteAll(toDeleteCategories);
+      }
+
+      // Activities
+      final activitiesBox = Hive.box(HiveBoxes.activities);
+      final List<dynamic> actKeys = activitiesBox.keys.toList(growable: false);
+      final toDeleteActivities = <dynamic>[];
+      for (final key in actKeys) {
+        final a = activitiesBox.get(key);
+        if (a is Map && a['courseId'] == id) {
+          toDeleteActivities.add(key);
+        }
+      }
+      if (toDeleteActivities.isNotEmpty) {
+        await activitiesBox.deleteAll(toDeleteActivities);
+      }
+
+      // Groups (stored with both courseId and categoryId)
+      final groupsBox = Hive.box(HiveBoxes.groups);
+      final List<dynamic> groupKeys = groupsBox.keys.toList(growable: false);
+      final toDeleteGroups = <dynamic>[];
+      for (final key in groupKeys) {
+        final g = groupsBox.get(key);
+        if (g is Map && g['courseId'] == id) {
+          toDeleteGroups.add(key);
+        }
+      }
+      if (toDeleteGroups.isNotEmpty) {
+        await groupsBox.deleteAll(toDeleteGroups);
+      }
+    } catch (_) {
+      // Swallow cascade errors to ensure main course delete proceeds; caller will handle any higher-level errors
+    }
+
+    // Delete course itself
+    await _coursesBox.delete(id);
+
+    // Clean teacher -> course index
+    if (teacherId != null) {
+      final key = teacherId;
+      final existing = (_teacherIndexBox.get(key) as List?)?.cast<String>() ?? <String>[];
+      if (existing.contains(id)) {
+        existing.remove(id);
+        await _teacherIndexBox.put(key, existing);
+      }
+    }
   }
 
   Map<String, dynamic> _toMap(CourseModel c) => {

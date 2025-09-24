@@ -9,6 +9,8 @@ import '../../../courses/domain/repositories/course_repository.dart';
 import '../../../courses/domain/use_cases/create_course_use_case.dart';
 import '../../../courses/domain/use_cases/get_teacher_courses_use_case.dart';
 import '../../../courses/domain/use_cases/invite_student_use_case.dart';
+import '../../../courses/domain/use_cases/update_course_use_case.dart';
+import '../../../courses/domain/use_cases/delete_course_use_case.dart';
 import '../../../assessments/domain/repositories/category_repository.dart';
 import '../../../assessments/domain/repositories/activity_repository.dart';
 import '../../../assessments/data/datasources/category_local_datasource.dart';
@@ -75,11 +77,15 @@ class AuthBinding extends Bindings {
     }, fenix: true);
     Get.lazyPut(() => CreateCourseUseCase(Get.find<CourseRepository>()), fenix: true);
     Get.lazyPut(() => GetTeacherCoursesUseCase(Get.find<CourseRepository>()), fenix: true);
-    Get.lazyPut(() => InviteStudentUseCase(Get.find<CourseRepository>()), fenix: true);
+  Get.lazyPut(() => InviteStudentUseCase(Get.find<CourseRepository>()), fenix: true);
+  Get.lazyPut(() => UpdateCourseUseCase(Get.find<CourseRepository>()), fenix: true);
+  Get.lazyPut(() => DeleteCourseUseCase(Get.find<CourseRepository>()), fenix: true);
     Get.put(CourseController(
       createCourseUseCase: Get.find(),
       getTeacherCoursesUseCase: Get.find(),
       inviteStudentUseCase: Get.find(),
+      updateCourseUseCase: Get.find(),
+      deleteCourseUseCase: Get.find(),
     ), permanent: true);
 
     // Assessments / Categories / Activities
