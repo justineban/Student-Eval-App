@@ -44,25 +44,41 @@ class AuthController extends GetxController {
   Future<void> login(String email, String password) async {
     loading.value = true;
     error.value = null;
-    final result = await loginUseCase(email, password);
-    if (result == null) {
-      error.value = 'Credenciales inválidas o campos vacíos';
-    } else {
-      currentUser.value = result;
+    try {
+      final result = await loginUseCase(email, password);
+      if (result == null) {
+        error.value = 'Credenciales inválidas o campos vacíos';
+      } else {
+        currentUser.value = result;
+      }
+    } catch (e) {
+      error.value = e.toString();
+      // ignore: avoid_print
+      print('[AuthController] login error: $e');
+    } finally {
+      loading.value = false;
     }
-    loading.value = false;
   }
 
   Future<void> register(String name, String email, String password) async {
     loading.value = true;
     error.value = null;
-    final result = await registerUseCase(name: name, email: email, password: password);
-    if (result == null) {
-      error.value = 'No se pudo registrar (email en uso o datos inválidos)';
-    } else {
-      currentUser.value = result;
+    try {
+      final result = await registerUseCase(name: name, email: email, password: password);
+      if (result == null) {
+        // Solo caemos aquí si el use case devolvió null (caso muy raro ahora)
+        error.value = 'No se pudo registrar.';
+      } else {
+        currentUser.value = result;
+      }
+    } catch (e) {
+      // Mostrar mensaje del backend si viene (AuthApiException.toString devuelve el mensaje)
+      error.value = e.toString();
+      // ignore: avoid_print
+      print('[AuthController] register error: $e');
+    } finally {
+      loading.value = false;
     }
-    loading.value = false;
   }
 
   Future<void> logout() async {

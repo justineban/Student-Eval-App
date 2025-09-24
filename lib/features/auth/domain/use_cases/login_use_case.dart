@@ -6,7 +6,6 @@ class LoginUseCase {
   LoginUseCase(this.repository);
 
   Future<UserModel?> call(String email, String password) async {
-    if (email.trim().isEmpty || password.isEmpty) return null;
     return repository.login(email: email.trim(), password: password);
   }
 }

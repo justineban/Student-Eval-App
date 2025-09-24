@@ -56,6 +56,8 @@ class HiveAuthLocalDataSource implements AuthLocalDataSource {
   }
 
   static const _sessionKey = 'currentUserId';
+  static const _accessTokenKey = 'accessToken';
+  static const _refreshTokenKey = 'refreshToken';
 
   @override
   Future<UserModel?> fetchUserByEmail(String email) async {
@@ -95,7 +97,18 @@ class HiveAuthLocalDataSource implements AuthLocalDataSource {
   @override
   Future<void> clearSession() async {
     await _sessionBox.delete(_sessionKey);
+    await _sessionBox.delete(_accessTokenKey);
+    await _sessionBox.delete(_refreshTokenKey);
   }
+
+  // Extra helpers (not part of interface) for token management
+  Future<void> persistTokenPair(String accessToken, String refreshToken) async {
+    await _sessionBox.put(_accessTokenKey, accessToken);
+    await _sessionBox.put(_refreshTokenKey, refreshToken);
+  }
+
+  String? readAccessToken() => _sessionBox.get(_accessTokenKey) as String?;
+  String? readRefreshToken() => _sessionBox.get(_refreshTokenKey) as String?;
 
   Map<String, dynamic> _userToMap(UserModel u) => {
         'id': u.id,

@@ -68,7 +68,7 @@ class AuthBinding extends Bindings {
   void dependencies() {
     // Datasources (Hive-backed now; keep InMemory for tests if needed)
     Get.lazyPut<AuthLocalDataSource>(() => HiveAuthLocalDataSource(), fenix: true);
-    Get.lazyPut<AuthRemoteDataSource>(() => StubAuthRemoteDataSource(), fenix: true);
+  Get.lazyPut<AuthRemoteDataSource>(() => RobleAuthRemoteDataSource(projectId: 'movil_993b654d20', debugLogging: true), fenix: true);
 
     // Repository (bind to interface type so Get.find<AuthRepository>() works)
     Get.lazyPut<AuthRepository>(() => AuthRepositoryImpl(local: Get.find(), remote: Get.find()), fenix: true);
