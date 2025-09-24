@@ -11,8 +11,8 @@ abstract class AssessmentLocalDataSource {
 
 class HiveAssessmentLocalDataSource implements AssessmentLocalDataSource {
   late final Box _box;
-  HiveAssessmentLocalDataSource({Box? box}) { _box = box ?? Hive.box(HiveBoxes.activities); }
-  // NOTE: Ideally use its own box, but to minimize setup we reuse activities box with distinct keys
+  HiveAssessmentLocalDataSource({Box? box}) { _box = box ?? Hive.box(HiveBoxes.assessments); }
+  // Dedicated assessments box
 
   String _key(String id) => 'assessment_$id';
   String _keyByActivity(String activityId) => 'assessment_by_activity_$activityId';

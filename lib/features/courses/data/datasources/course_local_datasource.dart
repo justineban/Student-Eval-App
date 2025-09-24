@@ -157,6 +157,48 @@ class HiveCourseLocalDataSource implements CourseLocalDataSource {
         await activitiesBox.deleteAll(toDeleteActivities);
       }
 
+      // Assessments (in their dedicated box, using keys 'assessment_*' and index 'assessment_by_activity_*')
+      try {
+        final assessmentsBox = Hive.box(HiveBoxes.assessments);
+        final assessKeys = assessmentsBox.keys.toList(growable: false);
+        final toDeleteAssess = <dynamic>[];
+        // First, delete assessment records that belong to activities in this course
+        for (final key in assessKeys) {
+          final v = assessmentsBox.get(key);
+          if (key is String && key.startsWith('assessment_') && v is Map) {
+            if (v['courseId'] == id) {
+              toDeleteAssess.add(key);
+            }
+          }
+          if (key is String && key.startsWith('assessment_by_activity_')) {
+            // if index points to an assessment deleted above, remove index as well later
+            // We'll sweep indices after primary deletions
+          }
+        }
+        if (toDeleteAssess.isNotEmpty) {
+          await assessmentsBox.deleteAll(toDeleteAssess);
+        }
+        // Sweep index keys for the course's activities
+        final remainingKeys = assessmentsBox.keys.toList(growable: false);
+        final toDeleteIndex = <dynamic>[];
+        for (final key in remainingKeys) {
+          if (key is String && key.startsWith('assessment_by_activity_')) {
+            final assessmentId = assessmentsBox.get(key);
+            if (assessmentId is String) {
+              final data = assessmentsBox.get('assessment_' + assessmentId);
+              if (data == null || (data is Map && data['courseId'] == id)) {
+                toDeleteIndex.add(key);
+              }
+            } else {
+              toDeleteIndex.add(key);
+            }
+          }
+        }
+        if (toDeleteIndex.isNotEmpty) {
+          await assessmentsBox.deleteAll(toDeleteIndex);
+        }
+      } catch (_) {}
+
       // Groups (stored with both courseId and categoryId)
       final groupsBox = Hive.box(HiveBoxes.groups);
       final List<dynamic> groupKeys = groupsBox.keys.toList(growable: false);

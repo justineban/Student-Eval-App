@@ -5,5 +5,7 @@ class HiveBoxes {
   static const teacherCourses = 'teacher_courses_index';
   static const categories = 'categories';
   static const activities = 'activities';
+  // Dedicated box for assessments (moved out of activities box)
+  static const assessments = 'assessments';
   static const groups = 'groups';
 }

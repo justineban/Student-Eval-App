@@ -3,6 +3,8 @@ import 'package:get/get.dart';
 import '../../../assessments/ui/controllers/category_controller.dart';
 import '../../../assessments/domain/models/category_model.dart';
 import '../../ui/controllers/course_controller.dart';
+import '../../../auth/ui/controllers/auth_controller.dart';
+import '../../domain/repositories/course_repository.dart';
 
 class CategoryListPage extends StatefulWidget {
   const CategoryListPage({super.key});
@@ -13,11 +15,14 @@ class CategoryListPage extends StatefulWidget {
 class _CategoryListPageState extends State<CategoryListPage> {
   late final CategoryController _categoryController;
   String? _courseId; // Se podría pasar por args en el futuro
+  late final AuthController _auth;
+  bool _isTeacher = false;
 
   @override
   void initState() {
     super.initState();
     _categoryController = Get.find<CategoryController>();
+    _auth = Get.find<AuthController>();
     // Intentar obtener courseId desde argumentos primero
     final args = Get.arguments;
     if (args is Map && args['courseId'] is String) {
@@ -28,6 +33,18 @@ class _CategoryListPageState extends State<CategoryListPage> {
     }
     if (_courseId != null) {
       _categoryController.load(_courseId!);
+      _determineRole();
+    }
+  }
+
+  Future<void> _determineRole() async {
+    try {
+      final repo = Get.find<CourseRepository>();
+      final course = await repo.getCourseById(_courseId!);
+      final uid = _auth.currentUser.value?.id;
+      if (mounted) setState(() => _isTeacher = (course?.teacherId == uid));
+    } catch (_) {
+      if (mounted) setState(() => _isTeacher = false);
     }
   }
 
@@ -242,14 +259,16 @@ class _CategoryListPageState extends State<CategoryListPage> {
                       onPressed: () => _categoryController.viewGroups(c),
                     ),
                   ),
-                  Tooltip(
+                  if (_isTeacher)
+                    Tooltip(
                     message: 'Editar',
                     child: IconButton(
                       icon: const Icon(Icons.edit_outlined),
                       onPressed: () => _openEditDialog(c),
                     ),
                   ),
-                  Tooltip(
+                  if (_isTeacher)
+                    Tooltip(
                     message: 'Eliminar',
                     child: IconButton(
                       icon: const Icon(Icons.delete_outline, color: Colors.red),
@@ -262,10 +281,12 @@ class _CategoryListPageState extends State<CategoryListPage> {
           },
         );
       }),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _openCreateDialog,
-        child: const Icon(Icons.add),
-      ),
+      floatingActionButton: _isTeacher
+          ? FloatingActionButton(
+              onPressed: _openCreateDialog,
+              child: const Icon(Icons.add),
+            )
+          : null,
     );
   }
 }

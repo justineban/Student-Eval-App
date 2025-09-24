@@ -78,25 +78,28 @@ class CategoryController extends GetxController {
       if (idx != -1) {
         categories[idx] = updated; // triggers update
       }
-      // If capacity decreased, trim over-capacity groups for this category
+      // End the updating spinner before any potentially long follow-up work
+      updating.value = false;
+
+      // If capacity decreased, trim over-capacity groups for this category in background (non-blocking)
       if (maxStudentsPerGroup != null && maxStudentsPerGroup < oldMax) {
-        // Try to call the groups controller to enforce new capacity
-        if (Get.isRegistered<dynamic>(tag: null) && Get.isRegistered<CourseGroupController>()) {
-          final gc = Get.find<CourseGroupController>();
-          await gc.trimOverCapacityGroups(updated.id, maxStudentsPerGroup);
-        } else {
-          // best effort without crashing if not available
+        Future<void>(() async {
           try {
-            final gc = Get.find<CourseGroupController>();
-            await gc.trimOverCapacityGroups(updated.id, maxStudentsPerGroup);
-          } catch (_) {}
-        }
+            if (Get.isRegistered<CourseGroupController>()) {
+              final gc = Get.find<CourseGroupController>();
+              await gc.trimOverCapacityGroups(updated.id, maxStudentsPerGroup);
+            }
+          } catch (_) {
+            // Best-effort; ignore errors to avoid disrupting UX
+          }
+        });
       }
       return updated;
     } catch (e) {
       error.value = e.toString();
       return null;
     } finally {
+      // Keep false; if already set above it remains false.
       updating.value = false;
     }
   }

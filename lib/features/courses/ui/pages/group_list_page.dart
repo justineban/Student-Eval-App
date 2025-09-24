@@ -3,6 +3,9 @@ import 'package:get/get.dart';
 import '../controllers/group_controller.dart';
 import '../controllers/course_controller.dart';
 import '../../../auth/data/datasources/auth_local_datasource.dart';
+import '../../../auth/ui/controllers/auth_controller.dart';
+import '../../../assessments/ui/controllers/category_controller.dart';
+import '../../domain/models/group_model.dart';
 
 class CourseGroupListPage extends StatefulWidget {
   final String courseId;
@@ -16,8 +19,40 @@ class CourseGroupListPage extends StatefulWidget {
 
 class _CourseGroupListPageState extends State<CourseGroupListPage> {
   late final CourseGroupController _controller;
+  late final AuthController _auth;
+  late final CategoryController _categoryCtrl;
+  bool _isTeacher = false;
+  bool _isManualCategory = true; // default; will resolve from category
   @override
-  void initState() { super.initState(); _controller = Get.find<CourseGroupController>(); _controller.load(widget.categoryId); }
+  void initState() {
+    super.initState();
+    _controller = Get.find<CourseGroupController>();
+    _auth = Get.find<AuthController>();
+    _categoryCtrl = Get.find<CategoryController>();
+    _controller.load(widget.categoryId);
+    _initRoleAndCategory();
+  }
+
+  Future<void> _initRoleAndCategory() async {
+    // Determine teacher role based on courseId
+    try {
+      final courseCtrl = Get.find<CourseController>();
+      final course = courseCtrl.courses.firstWhereOrNull((c) => c.id == widget.courseId);
+      final uid = _auth.currentUser.value?.id;
+      _isTeacher = (course?.teacherId == uid);
+    } catch (_) {
+      _isTeacher = false;
+    }
+    // Determine if category is manual (not random)
+    try {
+      await _categoryCtrl.load(widget.courseId);
+      final cat = _categoryCtrl.categories.firstWhereOrNull((c) => c.id == widget.categoryId);
+      _isManualCategory = !(cat?.randomGroups ?? false);
+    } catch (_) {
+      _isManualCategory = true;
+    }
+    if (mounted) setState(() {});
+  }
 
   Future<void> _createAuto() async { await _controller.create(courseId: widget.courseId, categoryId: widget.categoryId); }
 
@@ -164,16 +199,17 @@ class _CourseGroupListPageState extends State<CourseGroupListPage> {
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        // Single right-side button to toggle members panel
+                        // Toggle members panel (always allowed)
                         IconButton(
                           icon: const Icon(Icons.people_outline),
                           tooltip: expanded ? 'Ocultar integrantes' : 'Ver integrantes',
                           onPressed: () => _controller.toggleExpanded(g.id),
                         ),
-                        IconButton(
-                          icon: const Icon(Icons.delete_outline, color: Colors.red),
-                          onPressed: () => _confirmDelete(g.id, g.name),
-                        ),
+                        if (_isTeacher)
+                          IconButton(
+                            icon: const Icon(Icons.delete_outline, color: Colors.red),
+                            onPressed: () => _confirmDelete(g.id, g.name),
+                          ),
                       ],
                     ),
                   ),
@@ -206,34 +242,36 @@ class _CourseGroupListPageState extends State<CourseGroupListPage> {
                                               dense: true,
                                               leading: const Icon(Icons.person_outline, size: 18),
                                               title: Text(display),
-                                          trailing: Row(
+                                              trailing: Row(
                                             mainAxisSize: MainAxisSize.min,
                                             children: [
-                                              IconButton(
-                                                icon: const Icon(Icons.swap_horiz_outlined),
-                                                tooltip: 'Cambiar de grupo',
-                                                onPressed: () => _promptMoveMember(fromGroupId: g.id, memberName: display),
-                                              ),
-                                              IconButton(
-                                                icon: const Icon(Icons.delete_outline, color: Colors.red),
-                                                tooltip: 'Quitar del grupo',
-                                                onPressed: () async {
-                                                  final ok = await showDialog<bool>(
-                                                    context: context,
-                                                    builder: (_) => AlertDialog(
-                                                      title: const Text('Quitar integrante'),
-                                                      content: Text('¿Quitar "$display" de ${g.name}?'),
-                                                      actions: [
-                                                        TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
-                                                        TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Quitar')),
-                                                      ],
+                                                  if (_isTeacher)
+                                                    IconButton(
+                                                      icon: const Icon(Icons.swap_horiz_outlined),
+                                                      tooltip: 'Cambiar de grupo',
+                                                      onPressed: () => _promptMoveMember(fromGroupId: g.id, memberName: display),
                                                     ),
-                                                  );
-                                                  if (ok == true) {
-                                                    await _controller.removeMember(g.id, member);
-                                                  }
-                                                },
-                                              ),
+                                                  if (_isTeacher)
+                                                    IconButton(
+                                                      icon: const Icon(Icons.delete_outline, color: Colors.red),
+                                                      tooltip: 'Quitar del grupo',
+                                                      onPressed: () async {
+                                                        final ok = await showDialog<bool>(
+                                                          context: context,
+                                                          builder: (_) => AlertDialog(
+                                                            title: const Text('Quitar integrante'),
+                                                            content: Text('¿Quitar "$display" de ${g.name}?'),
+                                                            actions: [
+                                                              TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
+                                                              TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Quitar')),
+                                                            ],
+                                                          ),
+                                                        );
+                                                        if (ok == true) {
+                                                          await _controller.removeMember(g.id, member);
+                                                        }
+                                                      },
+                                                    ),
                                             ],
                                           ),
                                             );
@@ -244,14 +282,23 @@ class _CourseGroupListPageState extends State<CourseGroupListPage> {
                                   ),
                           ),
                           const SizedBox(height: 8),
-                          Align(
-                            alignment: Alignment.centerLeft,
-                            child: FilledButton.icon(
-                              onPressed: !_controller.canAddToGroup(g.id) ? null : () => _promptAddMember(g.id),
-                              icon: const Icon(Icons.person_add_alt_1_outlined, size: 18),
-                              label: const Text('Añadir integrante'),
+                          if (_isTeacher)
+                            Align(
+                              alignment: Alignment.centerLeft,
+                              child: FilledButton.icon(
+                                onPressed: !_controller.canAddToGroup(g.id) ? null : () => _promptAddMember(g.id),
+                                icon: const Icon(Icons.person_add_alt_1_outlined, size: 18),
+                                label: const Text('Añadir integrante'),
+                              ),
                             ),
-                          ),
+                          if (!_isTeacher && _isManualCategory)
+                            _JoinOrLeaveRow(
+                              group: g,
+                              courseId: widget.courseId,
+                              categoryId: g.categoryId,
+                              currentUserId: _auth.currentUser.value?.id ?? '',
+                              canAdd: _controller.canAddToGroup(g.id),
+                            ),
                         ],
                       ),
                     ),
@@ -262,15 +309,64 @@ class _CourseGroupListPageState extends State<CourseGroupListPage> {
           },
         );
       }),
-      floatingActionButton: Obx(() => FloatingActionButton(
-            onPressed: _controller.creating.value ? null : _createAuto,
-            child: _controller.creating.value
-                ? const Padding(
-                    padding: EdgeInsets.all(8),
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.add),
-          )),
+      floatingActionButton: _isTeacher
+          ? Obx(() => FloatingActionButton(
+                onPressed: _controller.creating.value ? null : _createAuto,
+                child: _controller.creating.value
+                    ? const Padding(
+                        padding: EdgeInsets.all(8),
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.add),
+              ))
+          : null,
+    );
+  }
+}
+
+class _JoinOrLeaveRow extends StatelessWidget {
+  final GroupModel group;
+  final String courseId;
+  final String categoryId;
+  final String currentUserId;
+  final bool canAdd;
+  const _JoinOrLeaveRow({
+    required this.group,
+    required this.courseId,
+    required this.categoryId,
+    required this.currentUserId,
+    required this.canAdd,
+  });
+
+  bool get isMember => group.memberIds.contains(currentUserId);
+
+  @override
+  Widget build(BuildContext context) {
+    final ctrl = Get.find<CourseGroupController>();
+    final alreadyInSomeGroup = ctrl.groups.any((g) => g.categoryId == categoryId && g.memberIds.contains(currentUserId));
+    if (isMember) {
+      return Align(
+        alignment: Alignment.centerLeft,
+        child: OutlinedButton.icon(
+          onPressed: () async {
+            await ctrl.removeMember(group.id, currentUserId);
+          },
+          icon: const Icon(Icons.logout, size: 18),
+          label: const Text('Salir del grupo'),
+        ),
+      );
+    }
+    if (alreadyInSomeGroup) {
+      // Ya pertenece a otro grupo de la misma categoría: no mostrar botón de unirse aquí
+      return const SizedBox.shrink();
+    }
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: FilledButton.icon(
+        onPressed: canAdd ? () async { await ctrl.addMember(group.id, currentUserId); } : null,
+        icon: const Icon(Icons.login, size: 18),
+        label: const Text('Unirme'),
+      ),
     );
   }
 }
