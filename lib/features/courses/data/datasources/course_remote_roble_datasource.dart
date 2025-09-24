@@ -230,19 +230,29 @@ class RobleCourseRemoteDataSource implements CourseRemoteDataSource {
 	Future<List<CourseModel>> fetchRemoteCoursesByStudent(String studentId) async {
 		final token = await _readAccessToken();
 		if (token == null || token.isEmpty) throw Exception('No access token available');
-		final url = '$_base/read?tableName=CourseModel&studentIds=${Uri.encodeQueryComponent(studentId)}';
+		// Backend no admite filtro directo sobre JSON arrays; traemos todos y filtramos por studentIds
+		final url = '$_base/read?tableName=CourseModel';
 		_logRequest('GET', url, null);
 		final resp = await _client.get(Uri.parse(url), headers: _headers(token));
 		_logResponse('GET', url, resp);
 		if (resp.statusCode < 200 || resp.statusCode >= 300) return <CourseModel>[];
 		final data = jsonDecode(resp.body);
+		List<CourseModel> all = <CourseModel>[];
 		if (data is List) {
-			return data
+			all = data
 					.whereType<Map>()
 					.map((e) => _fromMap(e.map((k, v) => MapEntry(k.toString(), v))))
 					.toList();
+		} else if (data is Map<String, dynamic>) {
+			final list = (data['items'] ?? data['data']) as List?;
+			if (list != null) {
+				all = list
+						.whereType<Map>()
+						.map((e) => _fromMap(e.map((k, v) => MapEntry(k.toString(), v))))
+						.toList();
+			}
 		}
-		return <CourseModel>[];
+		return all.where((c) => c.studentIds.contains(studentId)).toList();
 	}
 
 	@override
