@@ -1,4 +1,5 @@
 import 'package:get/get.dart';
+import 'dart:math';
 import 'package:hive/hive.dart';
 import '../../../../core/storage/hive_boxes.dart';
 import '../../domain/use_cases/create_group_use_case.dart';
@@ -163,5 +164,119 @@ class CourseGroupController extends GetxController {
       // optional: surface error
       error.value = e.toString();
     }
+  }
+
+  // Compute and create enough groups so capacity >= number of students. Does not modify existing groups.
+  Future<void> ensureMinimumGroupsForCategory({required String courseId, required String categoryId, required int maxPerGroup}) async {
+    // Count students in course
+    int studentsCount = 0;
+    try {
+      final box = Hive.box(HiveBoxes.courses);
+      for (final key in box.keys) {
+        final data = box.get(key);
+        if (data is Map && data['id'] == courseId) {
+          studentsCount = ((data['studentIds'] as List?)?.length) ?? 0;
+          break;
+        }
+      }
+    } catch (_) {}
+    if (studentsCount <= 0 || maxPerGroup <= 0) return;
+
+    // Current groups count for this category
+    final existing = await listUseCase(categoryId);
+    final desired = (studentsCount / maxPerGroup).ceil().clamp(1, 1 << 31);
+    final toCreate = desired - existing.length;
+    if (toCreate <= 0) return;
+
+    // Create additional groups without touching existing ones
+    for (int i = 0; i < toCreate; i++) {
+      await createUseCase(courseId: courseId, categoryId: categoryId, name: 'Grupo ${existing.length + i + 1}');
+    }
+    // Refresh local state if this controller is currently showing the same category
+    if (groups.isNotEmpty && groups.first.categoryId == categoryId) {
+      await load(categoryId);
+    }
+  }
+
+  // Randomly distribute all course students across existing groups for a category. Ensures enough groups first.
+  Future<void> randomDistributeAllStudents({required String courseId, required String categoryId, required int maxPerGroup}) async {
+    // Ensure enough groups
+    await ensureMinimumGroupsForCategory(courseId: courseId, categoryId: categoryId, maxPerGroup: maxPerGroup);
+    // Load fresh groups for this category
+    final catGroups = await listUseCase(categoryId);
+    if (catGroups.isEmpty) return;
+    // Load students of course
+    List<String> students = [];
+    try {
+      final box = Hive.box(HiveBoxes.courses);
+      for (final key in box.keys) {
+        final data = box.get(key);
+        if (data is Map && data['id'] == courseId) {
+          students = (data['studentIds'] as List?)?.cast<String>() ?? <String>[];
+          break;
+        }
+      }
+    } catch (_) {}
+    if (students.isEmpty) return;
+
+    // Shuffle and partition
+    students.shuffle(Random());
+    final n = catGroups.length;
+    final partitions = List.generate(n, (_) => <String>[]);
+    for (final s in students) {
+      // find next group index with available capacity
+      int idx = 0;
+      // simple round-robin with capacity check
+      for (int attempt = 0; attempt < n; attempt++) {
+        final gi = attempt % n;
+        if (partitions[gi].length < maxPerGroup) { idx = gi; break; }
+      }
+      partitions[idx].add(s);
+    }
+
+    // Persist new members per group directly in Hive (do not change ids or names)
+    final gbox = Hive.box(HiveBoxes.groups);
+    for (int i = 0; i < n; i++) {
+      final g = catGroups[i];
+      await gbox.put(g.id, {
+        'id': g.id,
+        'courseId': g.courseId,
+        'categoryId': g.categoryId,
+        'name': g.name,
+        'memberIds': partitions[i],
+      });
+    }
+    // Refresh local if applicable
+    if (groups.isNotEmpty && groups.first.categoryId == categoryId) {
+      await load(categoryId);
+    }
+  }
+
+  // Handle a new student joining the course: ensure enough groups and place into a random category's group if applicable
+  Future<void> handleStudentJoinedCourse({required String courseId, required String studentId}) async {
+    // Iterate categories in this course
+    try {
+      final cbox = Hive.box(HiveBoxes.categories);
+      for (final key in cbox.keys) {
+        final data = cbox.get(key);
+        if (data is Map && data['courseId'] == courseId) {
+          final categoryId = data['id'] as String;
+          final max = data['maxStudentsPerGroup'] as int? ?? 5;
+          final isRandom = data['randomGroups'] as bool? ?? false;
+          // Ensure enough capacity (may create new groups)
+          await ensureMinimumGroupsForCategory(courseId: courseId, categoryId: categoryId, maxPerGroup: max);
+          if (isRandom) {
+            // Assign student to any group with capacity if not already assigned under this category
+            final catGroups = await listUseCase(categoryId);
+            final already = catGroups.any((g) => g.memberIds.contains(studentId));
+            if (already) continue;
+            final target = catGroups.firstWhereOrNull((g) => g.memberIds.length < max);
+            if (target != null) {
+              await addMemberUseCase(groupId: target.id, memberName: studentId);
+            }
+          }
+        }
+      }
+    } catch (_) {}
   }
 }

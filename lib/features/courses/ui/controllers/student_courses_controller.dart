@@ -1,4 +1,5 @@
 import 'package:get/get.dart';
+import 'group_controller.dart';
 import '../../../auth/ui/controllers/auth_controller.dart';
 import '../../domain/models/course_model.dart';
 import '../../domain/use_cases/join_course_by_code_use_case.dart';
@@ -59,6 +60,15 @@ class StudentCoursesController extends GetxController {
         error.value = 'Código inválido';
       } else {
         await refreshData();
+        // Ensure groups are prepared and student is assigned when applicable
+        Future<void>(() async {
+          try {
+            if (Get.isRegistered<CourseGroupController>()) {
+              final gc = Get.find<CourseGroupController>();
+              await gc.handleStudentJoinedCourse(courseId: course.id, studentId: id);
+            }
+          } catch (_) {}
+        });
       }
       return course;
     } finally {
@@ -74,6 +84,17 @@ class StudentCoursesController extends GetxController {
     try {
       final course = await acceptInvitationUseCase(courseId: courseId, email: email, studentId: id);
       await refreshData();
+      // Ensure groups are prepared and student is assigned when applicable
+      if (course != null) {
+        Future<void>(() async {
+          try {
+            if (Get.isRegistered<CourseGroupController>()) {
+              final gc = Get.find<CourseGroupController>();
+              await gc.handleStudentJoinedCourse(courseId: course.id, studentId: id);
+            }
+          } catch (_) {}
+        });
+      }
       return course;
     } finally {
       loading.value = false;

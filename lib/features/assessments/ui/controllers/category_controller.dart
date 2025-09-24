@@ -54,6 +54,18 @@ class CategoryController extends GetxController {
         maxStudentsPerGroup: maxStudentsPerGroup,
       );
       categories.add(cat);
+      // After creating category, ensure minimum groups for all students; and if random, distribute
+      Future<void>(() async {
+        try {
+          if (Get.isRegistered<CourseGroupController>()) {
+            final gc = Get.find<CourseGroupController>();
+            await gc.ensureMinimumGroupsForCategory(courseId: courseId, categoryId: cat.id, maxPerGroup: maxStudentsPerGroup);
+            if (randomGroups) {
+              await gc.randomDistributeAllStudents(courseId: courseId, categoryId: cat.id, maxPerGroup: maxStudentsPerGroup);
+            }
+          }
+        } catch (_) {}
+      });
       return cat;
     } catch (e) {
       error.value = e.toString();
@@ -94,6 +106,22 @@ class CategoryController extends GetxController {
           }
         });
       }
+
+      // If random toggled on or max changed (increase), re-evaluate groups: ensure enough and redistribute for random
+      Future<void>(() async {
+        try {
+          if (!Get.isRegistered<CourseGroupController>()) return;
+          final gc = Get.find<CourseGroupController>();
+          final max = maxStudentsPerGroup ?? updated.maxStudentsPerGroup;
+          // Always ensure capacity after updates
+          await gc.ensureMinimumGroupsForCategory(courseId: updated.courseId, categoryId: updated.id, maxPerGroup: max);
+          // If category is random, distribute all students now
+          final isRandom = randomGroups ?? updated.randomGroups;
+          if (isRandom) {
+            await gc.randomDistributeAllStudents(courseId: updated.courseId, categoryId: updated.id, maxPerGroup: max);
+          }
+        } catch (_) {}
+      });
       return updated;
     } catch (e) {
       error.value = e.toString();
