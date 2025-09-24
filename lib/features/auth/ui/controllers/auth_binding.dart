@@ -27,6 +27,14 @@ import '../../../assessments/domain/use_cases/update_activity_use_case.dart';
 import '../../../assessments/domain/use_cases/delete_activity_use_case.dart';
 import '../../../assessments/ui/controllers/category_controller.dart';
 import '../../../assessments/ui/controllers/activity_controller.dart';
+import '../../../assessments/ui/controllers/assessment_controller.dart';
+import '../../../assessments/data/datasources/assessment_local_datasource.dart';
+import '../../../assessments/data/repositories/assessment_repository_impl.dart';
+import '../../../assessments/domain/repositories/assessment_repository.dart';
+import '../../../assessments/domain/use_cases/create_assessment_use_case.dart';
+import '../../../assessments/domain/use_cases/get_assessment_by_activity_use_case.dart';
+import '../../../assessments/domain/use_cases/update_assessment_use_case.dart';
+import '../../../assessments/domain/use_cases/delete_assessment_by_activity_use_case.dart';
 import '../../../courses/data/datasources/group_local_datasource.dart';
 import '../../../courses/data/repositories/group_repository_impl.dart';
 import '../../../courses/domain/repositories/group_repository.dart';
@@ -103,6 +111,13 @@ class AuthBinding extends Bindings {
   Get.lazyPut(() => DeleteCategoryUseCase(Get.find<CategoryRepository>()), fenix: true);
     Get.lazyPut(() => CreateActivityUseCase(activityRepository: Get.find<ActivityRepository>(), categoryRepository: Get.find<CategoryRepository>()), fenix: true);
   Get.lazyPut(() => GetActivitiesUseCase(Get.find<ActivityRepository>()), fenix: true);
+    // Assessments wiring
+    Get.lazyPut<AssessmentLocalDataSource>(() => HiveAssessmentLocalDataSource(), fenix: true);
+    Get.lazyPut<AssessmentRepository>(() => AssessmentRepositoryImpl(local: Get.find()), fenix: true);
+    Get.lazyPut(() => CreateAssessmentUseCase(Get.find<AssessmentRepository>()), fenix: true);
+    Get.lazyPut(() => GetAssessmentByActivityUseCase(Get.find<AssessmentRepository>()), fenix: true);
+    Get.lazyPut(() => UpdateAssessmentUseCase(Get.find<AssessmentRepository>()), fenix: true);
+  Get.lazyPut(() => DeleteAssessmentByActivityUseCase(Get.find<AssessmentRepository>()), fenix: true);
   Get.lazyPut(() => UpdateActivityUseCase(Get.find<ActivityRepository>()), fenix: true);
   Get.lazyPut(() => DeleteActivityUseCase(Get.find<ActivityRepository>()), fenix: true);
   Get.lazyPut(() => CreateCourseGroupUseCase(Get.find<CourseGroupRepository>()), fenix: true);
@@ -131,5 +146,20 @@ class AuthBinding extends Bindings {
       print('[AuthBinding] ActivityController registered');
     }
   Get.put(CourseGroupController(createUseCase: Get.find(), listUseCase: Get.find(), deleteUseCase: Get.find(), addMemberUseCase: Get.find()), permanent: true);
+
+    // Assessment controller (must be inside dependencies())
+    if (!Get.isRegistered<AssessmentController>()) {
+      Get.put(
+        AssessmentController(
+          createUseCase: Get.find(),
+          getByActivityUseCase: Get.find(),
+          updateUseCase: Get.find(),
+          deleteByActivityUseCase: Get.find(),
+        ),
+        permanent: true,
+      );
+      // ignore: avoid_print
+      print('[AuthBinding] AssessmentController registered');
+    }
   }
 }
