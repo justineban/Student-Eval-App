@@ -10,6 +10,7 @@ import '../../../auth/ui/controllers/auth_controller.dart';
 import '../../../courses/ui/controllers/course_controller.dart';
 import 'activity_evaluation_page.dart';
 import 'received_evaluations_page.dart';
+import 'teacher_grades_page.dart';
 
 class ActivityDetailPage extends StatefulWidget {
   final ActivityModel activity;
@@ -198,14 +199,20 @@ class _ActivityDetailPageState extends State<ActivityDetailPage> {
                               }
                             },
                       onViewGrades: () {
-                        Get.to(() => ReceivedEvaluationsPage(activity: a, assessment: current));
+                        if (_isTeacher) {
+                          Get.to(() => TeacherGradesPage(activity: a, assessment: current));
+                        } else {
+                          Get.to(() => ReceivedEvaluationsPage(activity: a, assessment: current));
+                        }
                       },
                       onEvaluate: _isTeacher || isCancelled
                           ? null
-                          : () {
-                              // Student-only: navigate to evaluation page
-                              Get.to(() => ActivityEvaluationPage(activity: a, assessment: current));
-                            },
+                          : (remaining.isNegative
+                              ? null
+                              : () {
+                                  // Student-only: navigate to evaluation page
+                                  Get.to(() => ActivityEvaluationPage(activity: a, assessment: current));
+                                }),
                     ),
                     crossFadeState: _panelOpen ? CrossFadeState.showSecond : CrossFadeState.showFirst,
                     duration: const Duration(milliseconds: 200),
