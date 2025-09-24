@@ -249,19 +249,31 @@ class RobleCourseRemoteDataSource implements CourseRemoteDataSource {
 	Future<List<CourseModel>> fetchRemoteInvitedCoursesForEmail(String email) async {
 		final token = await _readAccessToken();
 		if (token == null || token.isEmpty) throw Exception('No access token available');
-		final url = '$_base/read?tableName=CourseModel&invitations=${Uri.encodeQueryComponent(email.toLowerCase())}';
+		final lower = email.toLowerCase();
+		// Backend no admite filtros JSON por query; traer todos y filtrar en cliente
+		final url = '$_base/read?tableName=CourseModel';
 		_logRequest('GET', url, null);
 		final resp = await _client.get(Uri.parse(url), headers: _headers(token));
 		_logResponse('GET', url, resp);
 		if (resp.statusCode < 200 || resp.statusCode >= 300) return <CourseModel>[];
 		final data = jsonDecode(resp.body);
+		List<CourseModel> all = <CourseModel>[];
 		if (data is List) {
-			return data
+			all = data
 					.whereType<Map>()
 					.map((e) => _fromMap(e.map((k, v) => MapEntry(k.toString(), v))))
 					.toList();
+		} else if (data is Map<String, dynamic>) {
+			final list = (data['items'] ?? data['data']) as List?;
+			if (list != null) {
+				all = list
+						.whereType<Map>()
+						.map((e) => _fromMap(e.map((k, v) => MapEntry(k.toString(), v))))
+						.toList();
+			}
 		}
-		return <CourseModel>[];
+		// Filtrar por invitaciones que contengan el email (normalizado en minúsculas)
+		return all.where((c) => c.invitations.map((e) => e.toLowerCase()).contains(lower)).toList();
 	}
 
 	String _generateId() {

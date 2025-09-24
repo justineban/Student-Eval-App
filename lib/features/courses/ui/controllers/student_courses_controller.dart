@@ -28,12 +28,24 @@ class StudentCoursesController extends GetxController {
   String? get _studentId => Get.find<AuthController>().currentUser.value?.id;
   String? get _studentEmail => Get.find<AuthController>().currentUser.value?.email;
 
+  @override
+  void onInit() {
+    super.onInit();
+    // Auto-refresh when auth user changes (e.g., after login/restore finishes)
+    ever(Get.find<AuthController>().currentUser, (_) {
+      refreshData();
+    });
+  }
+
   Future<void> refreshData() async {
-    final id = _studentId;
-    if (id == null) return;
     loading.value = true;
     try {
-      enrolled.value = await getStudentCoursesUseCase(id);
+      final id = _studentId;
+      if (id != null && id.isNotEmpty) {
+        enrolled.value = await getStudentCoursesUseCase(id);
+      } else {
+        enrolled.clear();
+      }
       final email = _studentEmail;
       if (email != null && email.isNotEmpty) {
         invites.value = await getInvitedCoursesUseCase(email);
