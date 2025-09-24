@@ -50,9 +50,9 @@ class HomePage extends StatelessWidget {
               _ActionList(actions: const [
                 _ActionItem(label: 'Inscribirme a un curso', actionKey: 'enroll_course'),
                 _ActionItem(label: 'Cursos inscritos', actionKey: 'enrolled_courses'),
-                _ActionItem(label: 'Ver mis grupos'),
-                _ActionItem(label: 'Ver mis notas'),
-                _ActionItem(label: 'Actividades'),
+                _ActionItem(label: 'Ver mis grupos', actionKey: 'my_groups'),
+                _ActionItem(label: 'Ver mis notas', actionKey: 'my_grades'),
+                _ActionItem(label: 'Actividades', actionKey: 'my_activities'),
               ]),
             ],
           ),
@@ -104,6 +104,15 @@ class _ActionList extends StatelessWidget {
                         break;
                       case 'enrolled_courses':
                         home.goToEnrolledCourses();
+                        break;
+                      case 'my_groups':
+                        home.goToMyGroups();
+                        break;
+                      case 'my_grades':
+                        home.goToMyGrades();
+                        break;
+                      case 'my_activities':
+                        home.goToMyActivities();
                         break;
                       default:
                         // otros aun no implementados
