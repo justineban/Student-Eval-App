@@ -34,13 +34,6 @@ class _EnrolledCoursesPageState extends State<EnrolledCoursesPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Cursos inscritos'),
-        actions: [
-          IconButton(
-            tooltip: 'Inscribirme a un curso',
-            icon: const Icon(Icons.add),
-            onPressed: () => Get.toNamed('/enroll'),
-          )
-        ],
       ),
       body: Obx(() {
         final loading = _controller.loading.value;
@@ -49,20 +42,7 @@ class _EnrolledCoursesPageState extends State<EnrolledCoursesPage> {
           return const Center(child: CircularProgressIndicator());
         }
         if (courses.isEmpty) {
-          return Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text('Aún no estás inscrito en ningún curso'),
-                const SizedBox(height: 8),
-                OutlinedButton.icon(
-                  onPressed: () => Get.toNamed('/enroll'),
-                  icon: const Icon(Icons.add),
-                  label: const Text('Inscribirme a un curso'),
-                )
-              ],
-            ),
-          );
+          return const Center(child: Text('Aún no estás inscrito en ningún curso'));
         }
         return ListView.builder(
           itemCount: courses.length,
