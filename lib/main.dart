@@ -20,10 +20,7 @@ class MyApp extends StatelessWidget {
     debugShowCheckedModeBanner: false,
     title: 'Student Eval',
     initialBinding: AuthBinding(),
-    theme: ThemeData(
-      colorScheme: ColorScheme.fromSeed(seedColor: Colors.indigo),
-      useMaterial3: true,
-    ),
+    theme: _appTheme,
     getPages: [
       GetPage(
         name: '/course-groups',
@@ -45,3 +42,41 @@ class MyApp extends StatelessWidget {
     home: const SplashPage(),
   );
 }
+
+final _appTheme = ThemeData(
+  useMaterial3: true,
+  colorScheme: ColorScheme.fromSeed(
+    seedColor: const Color(0xFF006B5E), // teal profundo
+    brightness: Brightness.light,
+  ),
+  scaffoldBackgroundColor: const Color(0xFFF6F8FA),
+  textTheme: Typography.blackMountainView.copyWith(
+    headlineMedium: const TextStyle(
+      fontWeight: FontWeight.w700,
+      letterSpacing: 0.2,
+    ),
+    titleLarge: const TextStyle(fontWeight: FontWeight.w700),
+    titleMedium: const TextStyle(fontWeight: FontWeight.w600),
+  ),
+  inputDecorationTheme: InputDecorationTheme(
+    filled: true,
+    fillColor: const Color(0xFFF7F9FA),
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(14),
+      borderSide: BorderSide.none,
+    ),
+  ),
+  cardTheme: CardThemeData(
+    color: Colors.white,
+    margin: const EdgeInsets.all(8),
+    elevation: 2,
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+  ),
+  appBarTheme: const AppBarTheme(centerTitle: true, elevation: 0),
+  filledButtonTheme: FilledButtonThemeData(
+    style: FilledButton.styleFrom(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+    ),
+  ),
+);

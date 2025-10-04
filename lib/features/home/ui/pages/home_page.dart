@@ -9,65 +9,67 @@ class HomePage extends StatelessWidget {
   Widget build(BuildContext context) {
     final controller = Get.put(HomeController());
     return Scaffold(
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(60),
-        child: SafeArea(
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            alignment: Alignment.center,
-            child: Row(
-              children: [
-                const CircleAvatar(child: Icon(Icons.person)),
-                const SizedBox(width: 12),
-                Obx(
-                  () => Text(
-                    controller.userName,
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                ),
-                const Spacer(),
-                IconButton(
-                  tooltip: 'Cerrar sesión',
-                  icon: const Icon(Icons.logout),
-                  onPressed: controller.logout,
-                ),
-              ],
-            ),
+      appBar: AppBar(
+        title: const Text('Universidad del Norte'),
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        foregroundColor: Colors.white,
+        elevation: 2,
+        scrolledUnderElevation: 2,
+        actions: [
+          IconButton(icon: const Icon(Icons.refresh), onPressed: () {}),
+          PopupMenuButton<String>(
+            itemBuilder: (ctx) => [
+              const PopupMenuItem(
+                value: 'logout',
+                child: Text('Cerrar sesión'),
+              ),
+            ],
+            onSelected: (v) {
+              if (v == 'logout') controller.logout();
+            },
           ),
-        ),
+        ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
+      body: SafeArea(
         child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _SectionTitle('Módulo de profesores'),
               const SizedBox(height: 8),
-              _ActionList(
-                actions: const [
-                  _ActionItem(
+              _TilesGrid(
+                tiles: [
+                  _TileItem(
                     label: 'Ver mis cursos',
-                    actionKey: 'list_courses',
+                    color: const Color(0xFFD1E8E4),
+                    icon: Icons.menu_book_outlined,
+                    onTap: controller.goToCourses,
                   ),
-                  _ActionItem(
-                    label: 'Ver reporte de mis cursos',
-                    actionKey: 'teacher_courses_report',
+                  _TileItem(
+                    label: 'Reporte de cursos',
+                    color: const Color(0xFFFFF3CD),
+                    icon: Icons.assessment_outlined,
+                    onTap: controller.goToTeacherCoursesReport,
                   ),
                 ],
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 16),
               _SectionTitle('Módulo de estudiantes'),
               const SizedBox(height: 8),
-              _ActionList(
-                actions: const [
-                  _ActionItem(
-                    label: 'Ver mis cursos',
-                    actionKey: 'enrolled_courses',
+              _TilesGrid(
+                tiles: [
+                  _TileItem(
+                    label: 'Mis cursos',
+                    color: const Color(0xFFE3F2FD),
+                    icon: Icons.class_outlined,
+                    onTap: controller.goToEnrolledCourses,
                   ),
-                  _ActionItem(
+                  _TileItem(
                     label: 'Mis actividades',
-                    actionKey: 'my_activities',
+                    color: const Color(0xFFF3E5F5),
+                    icon: Icons.event_note_outlined,
+                    onTap: controller.goToMyActivities,
                   ),
                 ],
               ),
@@ -91,49 +93,72 @@ class _SectionTitle extends StatelessWidget {
   );
 }
 
-class _ActionItem {
-  final String label;
-  final String? actionKey; // used to map to controller methods
-  const _ActionItem({required this.label, this.actionKey});
-}
-
-class _ActionList extends StatelessWidget {
-  final List<_ActionItem> actions;
-  const _ActionList({required this.actions});
+class _TilesGrid extends StatelessWidget {
+  final List<_TileItem> tiles;
+  const _TilesGrid({required this.tiles});
 
   @override
   Widget build(BuildContext context) {
-    final home = Get.find<HomeController>();
-    return Column(
-      children: actions
-          .map(
-            (a) => Card(
-              child: ListTile(
-                title: Text(a.label),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () {
-                  switch (a.actionKey) {
-                    case 'list_courses':
-                      home.goToCourses();
-                      break;
-                    case 'enrolled_courses':
-                      home.goToEnrolledCourses();
-                      break;
-                    case 'my_activities':
-                      home.goToMyActivities();
-                      break;
-                    case 'teacher_courses_report':
-                      home.goToTeacherCoursesReport();
-                      break;
-                    default:
-                      // otros aun no implementados
-                      break;
-                  }
-                },
+    return GridView.count(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      crossAxisCount: 2,
+      childAspectRatio: 1.45,
+      mainAxisSpacing: 12,
+      crossAxisSpacing: 12,
+      children: tiles.map((t) => _Tile(t)).toList(),
+    );
+  }
+}
+
+class _TileItem {
+  final String label;
+  final IconData icon;
+  final Color color;
+  final VoidCallback onTap;
+  const _TileItem({
+    required this.label,
+    required this.icon,
+    required this.color,
+    required this.onTap,
+  });
+}
+
+class _Tile extends StatelessWidget {
+  final _TileItem item;
+  const _Tile(this.item);
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(14),
+      elevation: 1.0,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(14),
+        onTap: item.onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Align(
+                alignment: Alignment.topLeft,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: item.color,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  padding: const EdgeInsets.all(8),
+                  child: Icon(item.icon, size: 24, color: Colors.black54),
+                ),
               ),
-            ),
-          )
-          .toList(),
+              const Spacer(),
+              Text(item.label, style: Theme.of(context).textTheme.titleMedium),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
