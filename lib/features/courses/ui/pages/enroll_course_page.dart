@@ -19,12 +19,15 @@ class _EnrollCoursePageState extends State<EnrollCoursePage> {
     super.initState();
     // Ensure controller is registered (fallback in case initial binding didn't register it yet)
     if (!Get.isRegistered<StudentCoursesController>()) {
-      Get.put(StudentCoursesController(
-        joinByCodeUseCase: Get.find(),
-        getStudentCoursesUseCase: Get.find(),
-        getInvitedCoursesUseCase: Get.find(),
-        acceptInvitationUseCase: Get.find(),
-      ), permanent: true);
+      Get.put(
+        StudentCoursesController(
+          joinByCodeUseCase: Get.find(),
+          getStudentCoursesUseCase: Get.find(),
+          getInvitedCoursesUseCase: Get.find(),
+          acceptInvitationUseCase: Get.find(),
+        ),
+        permanent: true,
+      );
     }
     _controller = Get.find<StudentCoursesController>();
     // Load invitations initially
@@ -49,7 +52,10 @@ class _EnrollCoursePageState extends State<EnrollCoursePage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('Usar código de registro', style: TextStyle(fontWeight: FontWeight.w600)),
+              const Text(
+                'Usar código de registro',
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
               const SizedBox(height: 8),
               Row(
                 children: [
@@ -66,31 +72,58 @@ class _EnrollCoursePageState extends State<EnrollCoursePage> {
                   ),
                   const SizedBox(width: 12),
                   loading
-                      ? const SizedBox(width: 48, height: 48, child: Center(child: CircularProgressIndicator(strokeWidth: 2)))
+                      ? const SizedBox(
+                          width: 48,
+                          height: 48,
+                          child: Center(
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          ),
+                        )
                       : ElevatedButton(
                           onPressed: () async {
-                            final course = await _controller.joinByCode(_codeCtrl.text);
+                            final course = await _controller.joinByCode(
+                              _codeCtrl.text,
+                            );
                             if (course != null) {
                               _codeCtrl.clear();
                               // Go directly to course detail after successful join
                               Get.off(() => CourseDetailPage(course: course));
                             } else {
-                              final msg = _controller.error.value ?? 'Código inválido';
-                              Get.snackbar('No se pudo inscribir', msg, snackPosition: SnackPosition.BOTTOM);
+                              final msg =
+                                  _controller.error.value ?? 'Código inválido';
+                              Get.snackbar(
+                                'No se pudo inscribir',
+                                msg,
+                                snackPosition: SnackPosition.BOTTOM,
+                              );
                             }
                           },
                           child: const Text('Unirme'),
                         ),
                 ],
               ),
-              const SizedBox(height: 24),
-              const Divider(),
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  Expanded(child: Divider(color: Colors.grey.shade300)),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 8.0),
+                    child: Text('o'),
+                  ),
+                  Expanded(child: Divider(color: Colors.grey.shade300)),
+                ],
+              ),
               const SizedBox(height: 12),
               Row(
                 children: [
                   const Text('Invitaciones'),
                   const SizedBox(width: 8),
-                  if (loading) const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)),
+                  if (loading)
+                    const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
                   IconButton(
                     onPressed: _controller.refreshData,
                     tooltip: 'Actualizar',
@@ -101,7 +134,9 @@ class _EnrollCoursePageState extends State<EnrollCoursePage> {
               const SizedBox(height: 8),
               Expanded(
                 child: invites.isEmpty
-                    ? const Center(child: Text('No tienes invitaciones pendientes'))
+                    ? const Center(
+                        child: Text('No tienes invitaciones pendientes'),
+                      )
                     : ListView.builder(
                         itemCount: invites.length,
                         itemBuilder: (_, i) {
@@ -112,13 +147,24 @@ class _EnrollCoursePageState extends State<EnrollCoursePage> {
                               title: Text(c.name),
                               subtitle: Text(c.description),
                               trailing: loading
-                                  ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2))
+                                  ? const SizedBox(
+                                      width: 24,
+                                      height: 24,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                      ),
+                                    )
                                   : TextButton(
                                       onPressed: () async {
-                                        final joined = await _controller.acceptInvite(c.id);
+                                        final joined = await _controller
+                                            .acceptInvite(c.id);
                                         if (joined != null) {
                                           // Navigate to detail immediately after accepting invitation
-                                          Get.off(() => CourseDetailPage(course: joined));
+                                          Get.off(
+                                            () => CourseDetailPage(
+                                              course: joined,
+                                            ),
+                                          );
                                         }
                                       },
                                       child: const Text('Aceptar'),

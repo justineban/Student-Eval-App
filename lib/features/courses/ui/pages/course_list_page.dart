@@ -30,45 +30,38 @@ class _CourseListPageState extends State<CourseListPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: const Text('Mis Cursos')),
-        body: Obx(() {
-          if (_controller.loading.value) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          final list = _controller.courses;
-          if (list.isEmpty) {
-            return const Center(child: Text('Aún no tienes cursos creados'));
-          }
-          return ListView.separated(
-            itemCount: list.length,
-            separatorBuilder: (_, __) => const Divider(height: 1),
-            itemBuilder: (context, index) {
-              final course = list[index];
-              return ListTile(
-                title: Text(course.name),
-                subtitle: Text(course.description),
-                trailing: Text('${course.studentIds.length} alumnos'),
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => CourseDetailPage(course: course),
-                    ),
-                  );
-                },
-              );
-            },
+    appBar: AppBar(title: const Text('Mis Cursos')),
+    body: Obx(() {
+      if (_controller.loading.value) {
+        return const Center(child: CircularProgressIndicator());
+      }
+      final list = _controller.courses;
+      if (list.isEmpty) {
+        return const Center(child: Text('Aún no tienes cursos creados'));
+      }
+      return ListView.separated(
+        itemCount: list.length,
+        separatorBuilder: (_, __) => const Divider(height: 1),
+        itemBuilder: (context, index) {
+          final course = list[index];
+          return ListTile(
+            title: Text(course.name),
+            subtitle: Text(course.description),
+            trailing: Text('${course.studentIds.length} alumnos'),
+            onTap: () => Get.to(() => CourseDetailPage(course: course)),
           );
-        }),
-        floatingActionButton: FloatingActionButton(
-          onPressed: () async {
-            final created = await Get.to(() => const AddCoursePage());
-            if (created is CourseModel) {
-              // already added in controller, just ensure list reactive
-              setState(() {});
-            }
-          },
-          child: const Icon(Icons.add),
-        ),
+        },
       );
+    }),
+    floatingActionButton: FloatingActionButton(
+      onPressed: () async {
+        final created = await Get.to(() => const AddCoursePage());
+        if (created is CourseModel) {
+          // already added in controller, just ensure list reactive
+          setState(() {});
+        }
+      },
+      child: const Icon(Icons.add),
+    ),
+  );
 }

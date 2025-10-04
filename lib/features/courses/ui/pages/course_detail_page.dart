@@ -66,15 +66,23 @@ class _CourseDetailPageState extends State<CourseDetailPage> {
                 children: [
                   TextFormField(
                     controller: nameCtrl,
-                    decoration: const InputDecoration(labelText: 'Nombre', border: OutlineInputBorder()),
-                    validator: (v) => (v == null || v.trim().isEmpty) ? 'Requerido' : null,
+                    decoration: const InputDecoration(
+                      labelText: 'Nombre',
+                      border: OutlineInputBorder(),
+                    ),
+                    validator: (v) =>
+                        (v == null || v.trim().isEmpty) ? 'Requerido' : null,
                   ),
                   const SizedBox(height: 12),
                   TextFormField(
                     controller: descCtrl,
-                    decoration: const InputDecoration(labelText: 'Descripción', border: OutlineInputBorder()),
+                    decoration: const InputDecoration(
+                      labelText: 'Descripción',
+                      border: OutlineInputBorder(),
+                    ),
                     maxLines: 3,
-                    validator: (v) => (v == null || v.trim().isEmpty) ? 'Requerido' : null,
+                    validator: (v) =>
+                        (v == null || v.trim().isEmpty) ? 'Requerido' : null,
                   ),
                 ],
               ),
@@ -87,7 +95,11 @@ class _CourseDetailPageState extends State<CourseDetailPage> {
               saving
                   ? const Padding(
                       padding: EdgeInsets.symmetric(horizontal: 12),
-                      child: SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2)),
+                      child: SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
                     )
                   : ElevatedButton(
                       onPressed: () async {
@@ -105,10 +117,11 @@ class _CourseDetailPageState extends State<CourseDetailPage> {
                             const SnackBar(content: Text('Curso actualizado')),
                           );
                         } else {
-                          final msg = _courses.error.value ?? 'No se pudo actualizar';
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text(msg)),
-                          );
+                          final msg =
+                              _courses.error.value ?? 'No se pudo actualizar';
+                          ScaffoldMessenger.of(
+                            context,
+                          ).showSnackBar(SnackBar(content: Text(msg)));
                         }
                       },
                       child: const Text('Guardar'),
@@ -131,7 +144,9 @@ class _CourseDetailPageState extends State<CourseDetailPage> {
           final deleting = _courses.deleting.value;
           return AlertDialog(
             title: const Text('Eliminar curso'),
-            content: Text('¿Deseas eliminar definitivamente "${course.name}"? Esta acción no se puede deshacer.'),
+            content: Text(
+              '¿Deseas eliminar definitivamente "${course.name}"? Esta acción no se puede deshacer.',
+            ),
             actions: [
               TextButton(
                 onPressed: deleting ? null : () => Get.back(result: false),
@@ -140,11 +155,18 @@ class _CourseDetailPageState extends State<CourseDetailPage> {
               deleting
                   ? const Padding(
                       padding: EdgeInsets.symmetric(horizontal: 12),
-                      child: SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2)),
+                      child: SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
                     )
                   : TextButton(
                       onPressed: () async {
-                        final ok = await _courses.deleteCourse(id: course.id, teacherId: course.teacherId);
+                        final ok = await _courses.deleteCourse(
+                          id: course.id,
+                          teacherId: course.teacherId,
+                        );
                         if (!mounted) return;
                         if (ok) {
                           // Close dialog and this page
@@ -152,10 +174,17 @@ class _CourseDetailPageState extends State<CourseDetailPage> {
                           if (mounted) {
                             Navigator.of(context).pop();
                           }
-                          Get.snackbar('Curso eliminado', '"${course.name}" se eliminó correctamente', snackPosition: SnackPosition.BOTTOM);
+                          Get.snackbar(
+                            'Curso eliminado',
+                            '"${course.name}" se eliminó correctamente',
+                            snackPosition: SnackPosition.BOTTOM,
+                          );
                         } else {
-                          final msg = _courses.error.value ?? 'No se pudo eliminar';
-                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+                          final msg =
+                              _courses.error.value ?? 'No se pudo eliminar';
+                          ScaffoldMessenger.of(
+                            context,
+                          ).showSnackBar(SnackBar(content: Text(msg)));
                         }
                       },
                       style: TextButton.styleFrom(foregroundColor: Colors.red),
@@ -180,15 +209,15 @@ class _CourseDetailPageState extends State<CourseDetailPage> {
     if (_courses.inviteError.value == null) {
       _inviteEmailCtrl.clear();
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Invitación registrada')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Invitación registrada')));
       }
     } else {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(_courses.inviteError.value!)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(_courses.inviteError.value!)));
       }
     }
   }
@@ -207,7 +236,13 @@ class _CourseDetailPageState extends State<CourseDetailPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(course.name, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+                    Text(
+                      course.name,
+                      style: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                     const SizedBox(height: 8),
                     Text(course.description),
                     const SizedBox(height: 12),
@@ -215,14 +250,20 @@ class _CourseDetailPageState extends State<CourseDetailPage> {
                       future: _authLocal.fetchUserById(course.teacherId),
                       builder: (context, snapshot) {
                         final name = snapshot.data?.name ?? 'Docente';
-                        return Text('Docente: $name', style: const TextStyle(color: Colors.grey));
+                        return Text(
+                          'Docente: $name',
+                          style: const TextStyle(color: Colors.grey),
+                        );
                       },
                     ),
                     const SizedBox(height: 8),
                     Row(
                       children: [
                         if (_isTeacher)
-                          Text('Código: ${course.registrationCode}', style: const TextStyle(color: Colors.grey)),
+                          Text(
+                            'Código: ${course.registrationCode}',
+                            style: const TextStyle(color: Colors.grey),
+                          ),
                         const Spacer(),
                         if (_isTeacher) ...[
                           IconButton(
@@ -232,21 +273,30 @@ class _CourseDetailPageState extends State<CourseDetailPage> {
                           ),
                           IconButton(
                             onPressed: _confirmDelete,
-                            icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
+                            icon: const Icon(
+                              Icons.delete_outline,
+                              color: Colors.redAccent,
+                            ),
                             tooltip: 'Eliminar',
                           ),
                         ],
                       ],
                     ),
                     const SizedBox(height: 20),
-                    const Text('Estudiantes', style: TextStyle(fontWeight: FontWeight.w600)),
+                    const Text(
+                      'Estudiantes',
+                      style: TextStyle(fontWeight: FontWeight.w600),
+                    ),
                     const SizedBox(height: 8),
                     Container(
                       decoration: BoxDecoration(
                         border: Border.all(color: Colors.grey.shade300),
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      constraints: const BoxConstraints(minHeight: 120, maxHeight: 260),
+                      constraints: const BoxConstraints(
+                        minHeight: 120,
+                        maxHeight: 260,
+                      ),
                       child: course.studentIds.isEmpty
                           ? const Center(child: Text('Sin estudiantes todavía'))
                           : ListView.builder(
@@ -257,13 +307,22 @@ class _CourseDetailPageState extends State<CourseDetailPage> {
                                 return FutureBuilder(
                                   future: _authLocal.fetchUserById(studentId),
                                   builder: (context, snapshot) {
-                                    final isMe = _auth.currentUser.value?.id == studentId;
-                                    final displayName = snapshot.data?.name ?? 'Estudiante';
+                                    final isMe =
+                                        _auth.currentUser.value?.id ==
+                                        studentId;
+                                    final displayName =
+                                        snapshot.data?.name ?? 'Estudiante';
                                     return ListTile(
                                       dense: true,
                                       leading: const Icon(Icons.person_outline),
-                                      title: Text(isMe ? '$displayName (tú)' : displayName),
-                                      subtitle: snapshot.hasData ? Text(snapshot.data!.email) : null,
+                                      title: Text(
+                                        isMe
+                                            ? '$displayName (tú)'
+                                            : displayName,
+                                      ),
+                                      subtitle: snapshot.hasData
+                                          ? Text(snapshot.data!.email)
+                                          : null,
                                     );
                                   },
                                 );
@@ -298,24 +357,35 @@ class _CourseDetailPageState extends State<CourseDetailPage> {
                       children: [
                         Expanded(
                           child: OutlinedButton.icon(
-                            onPressed: () => Get.to(() => const ActivityListPage(), arguments: {'courseId': course.id}),
+                            onPressed: () => Get.to(
+                              () => const ActivityListPage(),
+                              arguments: {'courseId': course.id},
+                            ),
                             icon: const Icon(Icons.task_outlined),
                             label: const Text('Ver actividades'),
                           ),
                         ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: OutlinedButton.icon(
-                            onPressed: () => Get.to(() => const CategoryListPage(), arguments: {'courseId': course.id}),
-                            icon: const Icon(Icons.category_outlined),
-                            label: const Text('Ver categorías'),
+                        if (_isTeacher) ...[
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: OutlinedButton.icon(
+                              onPressed: () => Get.to(
+                                () => const CategoryListPage(),
+                                arguments: {'courseId': course.id},
+                              ),
+                              icon: const Icon(Icons.category_outlined),
+                              label: const Text('Ver categorías'),
+                            ),
                           ),
-                        ),
+                        ],
                       ],
                     ),
                     if (_isTeacher) ...[
                       const SizedBox(height: 20),
-                      const Text('Invitar estudiante', style: TextStyle(fontWeight: FontWeight.w600)),
+                      const Text(
+                        'Invitar estudiante',
+                        style: TextStyle(fontWeight: FontWeight.w600),
+                      ),
                       const SizedBox(height: 8),
                       Form(
                         key: _formKey,
@@ -331,16 +401,33 @@ class _CourseDetailPageState extends State<CourseDetailPage> {
                                 validator: (v) {
                                   final value = v?.trim() ?? '';
                                   if (value.isEmpty) return 'Requerido';
-                                  final emailRegex = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
-                                  if (!emailRegex.hasMatch(value)) return 'Email inválido';
+                                  final emailRegex = RegExp(
+                                    r'^[^@\s]+@[^@\s]+\.[^@\s]+$',
+                                  );
+                                  if (!emailRegex.hasMatch(value)) {
+                                    return 'Email inválido';
+                                  }
                                   return null;
                                 },
                               ),
                             ),
                             const SizedBox(width: 12),
-                            Obx(() => _courses.inviteLoading.value
-                                ? const SizedBox(width: 48, height: 48, child: Center(child: CircularProgressIndicator(strokeWidth: 2)))
-                                : ElevatedButton(onPressed: _onInvite, child: const Text('Invitar'))),
+                            Obx(
+                              () => _courses.inviteLoading.value
+                                  ? const SizedBox(
+                                      width: 48,
+                                      height: 48,
+                                      child: Center(
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                        ),
+                                      ),
+                                    )
+                                  : ElevatedButton(
+                                      onPressed: _onInvite,
+                                      child: const Text('Invitar'),
+                                    ),
+                            ),
                           ],
                         ),
                       ),
@@ -348,7 +435,13 @@ class _CourseDetailPageState extends State<CourseDetailPage> {
                       if (course.invitations.isNotEmpty) ...[
                         Align(
                           alignment: Alignment.centerLeft,
-                          child: Text('Invitaciones pendientes (${course.invitations.length})', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+                          child: Text(
+                            'Invitaciones pendientes (${course.invitations.length})',
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
                         ),
                         const SizedBox(height: 6),
                         SizedBox(
@@ -357,10 +450,15 @@ class _CourseDetailPageState extends State<CourseDetailPage> {
                             scrollDirection: Axis.horizontal,
                             itemCount: course.invitations.length,
                             itemBuilder: (_, i) => Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 8,
+                              ),
                               margin: const EdgeInsets.only(right: 8),
                               decoration: BoxDecoration(
-                                border: Border.all(color: Colors.indigo.shade200),
+                                border: Border.all(
+                                  color: Colors.indigo.shade200,
+                                ),
                                 borderRadius: BorderRadius.circular(20),
                                 color: Colors.indigo.shade50,
                               ),
@@ -368,7 +466,10 @@ class _CourseDetailPageState extends State<CourseDetailPage> {
                                 children: [
                                   const Icon(Icons.mail_outline, size: 16),
                                   const SizedBox(width: 4),
-                                  Text(course.invitations[i], style: const TextStyle(fontSize: 12)),
+                                  Text(
+                                    course.invitations[i],
+                                    style: const TextStyle(fontSize: 12),
+                                  ),
                                 ],
                               ),
                             ),

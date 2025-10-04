@@ -27,37 +27,57 @@ class _MyGradesPageState extends State<MyGradesPage> {
 
   final _expanded = <String>{}.obs; // courseId set
   final Map<String, _CourseGradesState> _courseState = {}; // courseId -> state
-  final Set<String> _loadingCourses = {}; // track background loads to avoid duplicates
+  final Set<String> _loadingCourses =
+      {}; // track background loads to avoid duplicates
 
   @override
   void initState() {
     super.initState();
     _auth = Get.find<AuthController>();
     if (!Get.isRegistered<StudentCoursesController>()) {
-      Get.lazyPut<StudentCoursesController>(() => StudentCoursesController(
-            joinByCodeUseCase: Get.find(),
-            getStudentCoursesUseCase: Get.find(),
-            getInvitedCoursesUseCase: Get.find(),
-            acceptInvitationUseCase: Get.find(),
-          ),
-          fenix: true);
+      Get.lazyPut<StudentCoursesController>(
+        () => StudentCoursesController(
+          joinByCodeUseCase: Get.find(),
+          getStudentCoursesUseCase: Get.find(),
+          getInvitedCoursesUseCase: Get.find(),
+          acceptInvitationUseCase: Get.find(),
+        ),
+        fenix: true,
+      );
     }
     _studentCtrl = Get.find<StudentCoursesController>();
     // DI defensiva para obtener evaluaciones recibidas
     if (!Get.isRegistered<GetReceivedPeerEvaluationsUseCase>()) {
       if (!Get.isRegistered<PeerEvaluationRepository>()) {
         if (!Get.isRegistered<PeerEvaluationLocalDataSource>()) {
-          Get.lazyPut<PeerEvaluationLocalDataSource>(() => HivePeerEvaluationLocalDataSource(), fenix: true);
+          Get.lazyPut<PeerEvaluationLocalDataSource>(
+            () => HivePeerEvaluationLocalDataSource(),
+            fenix: true,
+          );
         }
         if (!Get.isRegistered<PeerEvaluationRemoteDataSource>()) {
-          Get.lazyPut<PeerEvaluationRemoteDataSource>(() => RoblePeerEvaluationRemoteDataSource(projectId: 'movil_993b654d20', debugLogging: true), fenix: true);
+          Get.lazyPut<PeerEvaluationRemoteDataSource>(
+            () => RoblePeerEvaluationRemoteDataSource(
+              projectId: 'movil_993b654d20',
+              debugLogging: true,
+            ),
+            fenix: true,
+          );
         }
-        Get.lazyPut<PeerEvaluationRepository>(() => PeerEvaluationRepositoryImpl(
-          remote: Get.find<PeerEvaluationRemoteDataSource>(),
-          localCache: Get.find<PeerEvaluationLocalDataSource>(),
-        ), fenix: true);
+        Get.lazyPut<PeerEvaluationRepository>(
+          () => PeerEvaluationRepositoryImpl(
+            remote: Get.find<PeerEvaluationRemoteDataSource>(),
+            localCache: Get.find<PeerEvaluationLocalDataSource>(),
+          ),
+          fenix: true,
+        );
       }
-      Get.lazyPut(() => GetReceivedPeerEvaluationsUseCase(Get.find<PeerEvaluationRepository>()), fenix: true);
+      Get.lazyPut(
+        () => GetReceivedPeerEvaluationsUseCase(
+          Get.find<PeerEvaluationRepository>(),
+        ),
+        fenix: true,
+      );
     }
     _getUseCase = Get.find<GetReceivedPeerEvaluationsUseCase>();
     _studentCtrl.refreshData();
@@ -71,7 +91,9 @@ class _MyGradesPageState extends State<MyGradesPage> {
         final loading = _studentCtrl.loading.value;
         final courses = _studentCtrl.enrolled;
         if (loading) return const Center(child: CircularProgressIndicator());
-        if (courses.isEmpty) return const Center(child: Text('No estás inscrito en ningún curso'));
+        if (courses.isEmpty) {
+          return const Center(child: Text('No estás inscrito en ningún curso'));
+        }
         return ListView.separated(
           padding: const EdgeInsets.all(16),
           itemCount: courses.length,
@@ -108,9 +130,19 @@ class _MyGradesPageState extends State<MyGradesPage> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(c.name, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+                              Text(
+                                c.name,
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
                               const SizedBox(height: 4),
-                              Text(c.description, maxLines: 2, overflow: TextOverflow.ellipsis),
+                              Text(
+                                c.description,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             ],
                           ),
                         ),
@@ -121,8 +153,12 @@ class _MyGradesPageState extends State<MyGradesPage> {
                           ),
                         OutlinedButton.icon(
                           onPressed: () => _toggleCourse(c),
-                          icon: Icon(expanded ? Icons.expand_less : Icons.list_alt_outlined),
-                          label: Text(expanded ? 'Ocultar' : 'Ver actividades'),
+                          icon: Icon(
+                            expanded
+                                ? Icons.expand_less
+                                : Icons.list_alt_outlined,
+                          ),
+                          label: Text(expanded ? 'Ocultar' : 'Ver detalle'),
                         ),
                       ],
                     ),
@@ -132,7 +168,9 @@ class _MyGradesPageState extends State<MyGradesPage> {
                         padding: const EdgeInsets.only(top: 8.0),
                         child: _ActivitiesPanel(state: state),
                       ),
-                      crossFadeState: expanded ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+                      crossFadeState: expanded
+                          ? CrossFadeState.showSecond
+                          : CrossFadeState.showFirst,
                       duration: const Duration(milliseconds: 200),
                     ),
                   ],
@@ -157,7 +195,12 @@ class _MyGradesPageState extends State<MyGradesPage> {
     _expanded.refresh();
     if (mounted) setState(() {});
     if (!_courseState.containsKey(id)) {
-      final state = _CourseGradesState(loading: true, activities: const [], grades: const {}, courseAverage: null);
+      final state = _CourseGradesState(
+        loading: true,
+        activities: const [],
+        grades: const {},
+        courseAverage: null,
+      );
       _courseState[id] = state;
       if (mounted) setState(() {});
       try {
@@ -168,9 +211,18 @@ class _MyGradesPageState extends State<MyGradesPage> {
     }
   }
 
-  Future<_CourseGradesState> _loadCourseGrades({required String courseId}) async {
+  Future<_CourseGradesState> _loadCourseGrades({
+    required String courseId,
+  }) async {
     final userId = _auth.currentUser.value?.id;
-    if (userId == null) return _CourseGradesState(loading: false, activities: const [], grades: const {}, courseAverage: null);
+    if (userId == null) {
+      return _CourseGradesState(
+        loading: false,
+        activities: const [],
+        grades: const {},
+        courseAverage: null,
+      );
+    }
 
     // Fetch activities for course
     final abox = Hive.box(HiveBoxes.activities);
@@ -178,15 +230,19 @@ class _MyGradesPageState extends State<MyGradesPage> {
     for (final key in abox.keys) {
       final data = abox.get(key);
       if (data is Map && data['courseId'] == courseId) {
-        activities.add(ActivityModel(
-          id: data['id'],
-          courseId: data['courseId'],
-          categoryId: data['categoryId'],
-          name: data['name'],
-          description: data['description'] ?? '',
-          dueDate: data['dueDate'] != null ? DateTime.tryParse(data['dueDate']) : null,
-          visible: data['visible'] as bool? ?? true,
-        ));
+        activities.add(
+          ActivityModel(
+            id: data['id'],
+            courseId: data['courseId'],
+            categoryId: data['categoryId'],
+            name: data['name'],
+            description: data['description'] ?? '',
+            dueDate: data['dueDate'] != null
+                ? DateTime.tryParse(data['dueDate'])
+                : null,
+            visible: data['visible'] as bool? ?? true,
+          ),
+        );
       }
     }
     // Fetch assessment per activity (if any) and compute grade for the user as avg across received peer evaluations
@@ -214,12 +270,16 @@ class _MyGradesPageState extends State<MyGradesPage> {
         continue; // no assessment or cancelled -> no grade
       }
       // Get received evaluations for this user in this assessment and compute average across all criteria and evaluators
-      final evals = await _getUseCase(assessmentId: asm.id, evaluateeId: userId);
+      final evals = await _getUseCase(
+        assessmentId: asm.id,
+        evaluateeId: userId,
+      );
       if (evals.isEmpty) continue;
       double avg(num Function(PeerEvaluationModel) sel) {
         final sum = evals.fold<num>(0, (p, e) => p + sel(e));
         return sum / evals.length;
       }
+
       final p = avg((e) => e.punctuality);
       final c = avg((e) => e.contributions);
       final cm = avg((e) => e.commitment);
@@ -233,7 +293,12 @@ class _MyGradesPageState extends State<MyGradesPage> {
     if (grades.isNotEmpty) {
       courseAvg = grades.values.reduce((x, y) => x + y) / grades.length;
     }
-    return _CourseGradesState(loading: false, activities: activities, grades: grades, courseAverage: courseAvg);
+    return _CourseGradesState(
+      loading: false,
+      activities: activities,
+      grades: grades,
+      courseAverage: courseAvg,
+    );
   }
 }
 
@@ -242,7 +307,12 @@ class _CourseGradesState {
   final List<ActivityModel> activities;
   final Map<String, double> grades; // activityId -> grade
   final double? courseAverage;
-  _CourseGradesState({required this.loading, required this.activities, required this.grades, required this.courseAverage});
+  _CourseGradesState({
+    required this.loading,
+    required this.activities,
+    required this.grades,
+    required this.courseAverage,
+  });
 }
 
 class _ActivitiesPanel extends StatelessWidget {
@@ -277,8 +347,14 @@ class _ActivitiesPanel extends StatelessWidget {
             return ListTile(
               leading: const Icon(Icons.assignment_outlined),
               title: Text(a.name),
-              subtitle: Text(a.description, maxLines: 2, overflow: TextOverflow.ellipsis),
-              trailing: _Badge(text: grade == null ? '--' : grade.toStringAsFixed(1)),
+              subtitle: Text(
+                a.description,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              trailing: _Badge(
+                text: grade == null ? '--' : grade.toStringAsFixed(1),
+              ),
             );
           },
         ),
@@ -292,15 +368,18 @@ class _Badge extends StatelessWidget {
   const _Badge({required this.text});
   @override
   Widget build(BuildContext context) {
-  final color = Theme.of(context).colorScheme.primary;
+    final color = Theme.of(context).colorScheme.primary;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-  color: color.withValues(alpha: 0.1),
+        color: color.withValues(alpha: 0.1),
         border: Border.all(color: color),
         borderRadius: BorderRadius.circular(20),
       ),
-      child: Text(text, style: TextStyle(color: color, fontWeight: FontWeight.w700)),
+      child: Text(
+        text,
+        style: TextStyle(color: color, fontWeight: FontWeight.w700),
+      ),
     );
   }
 }

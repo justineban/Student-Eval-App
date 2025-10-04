@@ -19,7 +19,12 @@ class HomePage extends StatelessWidget {
               children: [
                 const CircleAvatar(child: Icon(Icons.person)),
                 const SizedBox(width: 12),
-                Obx(() => Text(controller.userName, style: Theme.of(context).textTheme.titleMedium)),
+                Obx(
+                  () => Text(
+                    controller.userName,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                ),
                 const Spacer(),
                 IconButton(
                   tooltip: 'Cerrar sesión',
@@ -39,21 +44,33 @@ class HomePage extends StatelessWidget {
             children: [
               _SectionTitle('Módulo de profesores'),
               const SizedBox(height: 8),
-              _ActionList(actions: const [
-                _ActionItem(label: 'Crear curso', actionKey: 'create_course'),
-                _ActionItem(label: 'Ver mis cursos', actionKey: 'list_courses'),
-                _ActionItem(label: 'Ver reporte de mis cursos', actionKey: 'teacher_courses_report'),
-              ]),
+              _ActionList(
+                actions: const [
+                  _ActionItem(
+                    label: 'Ver mis cursos',
+                    actionKey: 'list_courses',
+                  ),
+                  _ActionItem(
+                    label: 'Ver reporte de mis cursos',
+                    actionKey: 'teacher_courses_report',
+                  ),
+                ],
+              ),
               const SizedBox(height: 24),
               _SectionTitle('Módulo de estudiantes'),
               const SizedBox(height: 8),
-              _ActionList(actions: const [
-                _ActionItem(label: 'Inscribirme a un curso', actionKey: 'enroll_course'),
-                _ActionItem(label: 'Cursos inscritos', actionKey: 'enrolled_courses'),
-                _ActionItem(label: 'Ver mis grupos', actionKey: 'my_groups'),
-                _ActionItem(label: 'Ver mis notas', actionKey: 'my_grades'),
-                _ActionItem(label: 'Actividades', actionKey: 'my_activities'),
-              ]),
+              _ActionList(
+                actions: const [
+                  _ActionItem(
+                    label: 'Ver mis cursos',
+                    actionKey: 'enrolled_courses',
+                  ),
+                  _ActionItem(
+                    label: 'Mis actividades',
+                    actionKey: 'my_activities',
+                  ),
+                ],
+              ),
             ],
           ),
         ),
@@ -67,9 +84,11 @@ class _SectionTitle extends StatelessWidget {
   const _SectionTitle(this.text);
   @override
   Widget build(BuildContext context) => Text(
-        text,
-        style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-      );
+    text,
+    style: Theme.of(
+      context,
+    ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+  );
 }
 
 class _ActionItem {
@@ -87,43 +106,33 @@ class _ActionList extends StatelessWidget {
     final home = Get.find<HomeController>();
     return Column(
       children: actions
-          .map((a) => Card(
-                child: ListTile(
-                  title: Text(a.label),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () {
-                    switch (a.actionKey) {
-                      case 'create_course':
-                        home.goToCreateCourse();
-                        break;
-                      case 'list_courses':
-                        home.goToCourses();
-                        break;
-                      case 'enroll_course':
-                        home.goToEnrollCourse();
-                        break;
-                      case 'enrolled_courses':
-                        home.goToEnrolledCourses();
-                        break;
-                      case 'my_groups':
-                        home.goToMyGroups();
-                        break;
-                      case 'my_grades':
-                        home.goToMyGrades();
-                        break;
-                      case 'my_activities':
-                        home.goToMyActivities();
-                        break;
-                      case 'teacher_courses_report':
-                        home.goToTeacherCoursesReport();
-                        break;
-                      default:
-                        // otros aun no implementados
-                        break;
-                    }
-                  },
-                ),
-              ))
+          .map(
+            (a) => Card(
+              child: ListTile(
+                title: Text(a.label),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () {
+                  switch (a.actionKey) {
+                    case 'list_courses':
+                      home.goToCourses();
+                      break;
+                    case 'enrolled_courses':
+                      home.goToEnrolledCourses();
+                      break;
+                    case 'my_activities':
+                      home.goToMyActivities();
+                      break;
+                    case 'teacher_courses_report':
+                      home.goToTeacherCoursesReport();
+                      break;
+                    default:
+                      // otros aun no implementados
+                      break;
+                  }
+                },
+              ),
+            ),
+          )
           .toList(),
     );
   }
