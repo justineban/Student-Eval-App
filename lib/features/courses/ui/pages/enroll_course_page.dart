@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../../../../core/ui/widgets/app_top_bar.dart';
 import '../controllers/student_courses_controller.dart';
 import 'course_detail_page.dart';
 
@@ -43,7 +44,7 @@ class _EnrollCoursePageState extends State<EnrollCoursePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Inscribirme a un curso')),
+      appBar: const AppTopBar(title: 'Inscribirme a un curso'),
       body: Obx(() {
         final loading = _controller.loading.value;
         final invites = _controller.invites;

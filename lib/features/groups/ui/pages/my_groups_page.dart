@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../../../../core/ui/widgets/app_top_bar.dart';
 import 'package:hive/hive.dart';
 import '../../../../core/storage/hive_boxes.dart';
 import '../../../auth/ui/controllers/auth_controller.dart';
@@ -21,7 +22,8 @@ class _MyGroupsPageState extends State<MyGroupsPage> {
 
   final _expanded = <String>{}.obs; // courseId set
   final _loadingCourseGroups = <String>{}.obs; // courseIds loading
-  final Map<String, List<_UserGroupInfo>> _courseGroups = {}; // courseId -> groups
+  final Map<String, List<_UserGroupInfo>> _courseGroups =
+      {}; // courseId -> groups
 
   @override
   void initState() {
@@ -30,13 +32,15 @@ class _MyGroupsPageState extends State<MyGroupsPage> {
     _authLocal = Get.find<AuthLocalDataSource>();
     // Defensive DI for StudentCoursesController in case not registered yet
     if (!Get.isRegistered<StudentCoursesController>()) {
-      Get.lazyPut<StudentCoursesController>(() => StudentCoursesController(
-            joinByCodeUseCase: Get.find(),
-            getStudentCoursesUseCase: Get.find(),
-            getInvitedCoursesUseCase: Get.find(),
-            acceptInvitationUseCase: Get.find(),
-          ),
-          fenix: true);
+      Get.lazyPut<StudentCoursesController>(
+        () => StudentCoursesController(
+          joinByCodeUseCase: Get.find(),
+          getStudentCoursesUseCase: Get.find(),
+          getInvitedCoursesUseCase: Get.find(),
+          acceptInvitationUseCase: Get.find(),
+        ),
+        fenix: true,
+      );
     }
     _studentCtrl = Get.find<StudentCoursesController>();
     // Load enrolled courses
@@ -46,7 +50,7 @@ class _MyGroupsPageState extends State<MyGroupsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Mis grupos')),
+      appBar: const AppTopBar(title: 'Mis grupos'),
       body: Obx(() {
         final loading = _studentCtrl.loading.value;
         final courses = _studentCtrl.enrolled;
@@ -65,7 +69,11 @@ class _MyGroupsPageState extends State<MyGroupsPage> {
             final expanded = _expanded.contains(c.id);
             final isLoadingGroups = _loadingCourseGroups.contains(c.id);
             final groups = _courseGroups[c.id] ?? const <_UserGroupInfo>[];
-            return Card(
+            return Material(
+              color: Theme.of(
+                context,
+              ).colorScheme.secondaryContainer.withValues(alpha: 0.72),
+              borderRadius: BorderRadius.circular(16),
               child: Padding(
                 padding: const EdgeInsets.all(12),
                 child: Column(
@@ -77,15 +85,29 @@ class _MyGroupsPageState extends State<MyGroupsPage> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(c.name, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+                              Text(
+                                c.name,
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
                               const SizedBox(height: 4),
-                              Text(c.description, maxLines: 2, overflow: TextOverflow.ellipsis),
+                              Text(
+                                c.description,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             ],
                           ),
                         ),
                         OutlinedButton.icon(
                           onPressed: () => _toggleCourse(c),
-                          icon: Icon(expanded ? Icons.expand_less : Icons.groups_outlined),
+                          icon: Icon(
+                            expanded
+                                ? Icons.expand_less
+                                : Icons.groups_outlined,
+                          ),
                           label: Text(expanded ? 'Ocultar' : 'Ver grupos'),
                         ),
                       ],
@@ -100,7 +122,9 @@ class _MyGroupsPageState extends State<MyGroupsPage> {
                           onViewMembers: _openMembersDialog,
                         ),
                       ),
-                      crossFadeState: expanded ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+                      crossFadeState: expanded
+                          ? CrossFadeState.showSecond
+                          : CrossFadeState.showFirst,
                       duration: const Duration(milliseconds: 200),
                     ),
                   ],
@@ -139,7 +163,9 @@ class _MyGroupsPageState extends State<MyGroupsPage> {
     }
   }
 
-  Future<List<_UserGroupInfo>> _loadUserGroupsForCourse({required String courseId}) async {
+  Future<List<_UserGroupInfo>> _loadUserGroupsForCourse({
+    required String courseId,
+  }) async {
     final userId = _auth.currentUser.value?.id;
     if (userId == null) return <_UserGroupInfo>[];
 
@@ -150,7 +176,8 @@ class _MyGroupsPageState extends State<MyGroupsPage> {
     for (final key in cbox.keys) {
       final data = cbox.get(key);
       if (data is Map && data['courseId'] == courseId) {
-        catNames[data['id'] as String] = (data['name'] as String?) ?? 'Sin categoría';
+        catNames[data['id'] as String] =
+            (data['name'] as String?) ?? 'Sin categoría';
       }
     }
 
@@ -158,19 +185,23 @@ class _MyGroupsPageState extends State<MyGroupsPage> {
     for (final key in gbox.keys) {
       final data = gbox.get(key);
       if (data is Map && data['courseId'] == courseId) {
-        final members = (data['memberIds'] as List?)?.cast<String>() ?? const <String>[];
+        final members =
+            (data['memberIds'] as List?)?.cast<String>() ?? const <String>[];
         if (members.contains(userId)) {
           final gid = data['id'] as String;
           final name = (data['name'] as String?) ?? 'Grupo';
           final categoryId = data['categoryId'] as String?;
-          final categoryName = categoryId == null ? 'Sin categoría' : (catNames[categoryId] ?? 'Sin categoría');
-          mine.add(_UserGroupInfo(
-            groupId: gid,
-            groupName: name,
-            categoryName: categoryName,
-            memberIds: members,
-          ))
-          ;
+          final categoryName = categoryId == null
+              ? 'Sin categoría'
+              : (catNames[categoryId] ?? 'Sin categoría');
+          mine.add(
+            _UserGroupInfo(
+              groupId: gid,
+              groupName: name,
+              categoryName: categoryName,
+              memberIds: members,
+            ),
+          );
         }
       }
     }
@@ -188,15 +219,17 @@ class _MyGroupsPageState extends State<MyGroupsPage> {
       context: context,
       builder: (ctx) {
         return AlertDialog(
-          title: Text('Integrantes • ${info.groupName}')
-              ,
+          title: Text('Integrantes • ${info.groupName}'),
           content: SizedBox(
             width: 360,
             child: FutureBuilder<List<String>>(
               future: _fetchNames(info.memberIds),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const SizedBox(height: 120, child: Center(child: CircularProgressIndicator()));
+                  return const SizedBox(
+                    height: 120,
+                    child: Center(child: CircularProgressIndicator()),
+                  );
                 }
                 final names = snapshot.data ?? const <String>[];
                 if (names.isEmpty) {
@@ -219,7 +252,10 @@ class _MyGroupsPageState extends State<MyGroupsPage> {
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Cerrar')),
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('Cerrar'),
+            ),
           ],
         );
       },
@@ -245,7 +281,11 @@ class _GroupsPanel extends StatelessWidget {
   final bool isLoading;
   final List<_UserGroupInfo> groups;
   final void Function(_UserGroupInfo info) onViewMembers;
-  const _GroupsPanel({required this.isLoading, required this.groups, required this.onViewMembers});
+  const _GroupsPanel({
+    required this.isLoading,
+    required this.groups,
+    required this.onViewMembers,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -286,7 +326,6 @@ class _GroupsPanel extends StatelessWidget {
     );
   }
 }
-
 
 class _UserGroupInfo {
   final String groupId;

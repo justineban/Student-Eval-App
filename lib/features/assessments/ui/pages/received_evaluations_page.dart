@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../../../../core/ui/widgets/app_top_bar.dart';
 import '../../../auth/ui/controllers/auth_controller.dart';
 import '../../../auth/data/datasources/auth_local_datasource.dart';
 import '../../../auth/domain/models/user_model.dart';
@@ -15,10 +16,15 @@ import '../../domain/repositories/peer_evaluation_repository.dart';
 class ReceivedEvaluationsPage extends StatefulWidget {
   final ActivityModel activity;
   final AssessmentModel assessment;
-  const ReceivedEvaluationsPage({super.key, required this.activity, required this.assessment});
+  const ReceivedEvaluationsPage({
+    super.key,
+    required this.activity,
+    required this.assessment,
+  });
 
   @override
-  State<ReceivedEvaluationsPage> createState() => _ReceivedEvaluationsPageState();
+  State<ReceivedEvaluationsPage> createState() =>
+      _ReceivedEvaluationsPageState();
 }
 
 class _ReceivedEvaluationsPageState extends State<ReceivedEvaluationsPage> {
@@ -37,28 +43,48 @@ class _ReceivedEvaluationsPageState extends State<ReceivedEvaluationsPage> {
     if (!Get.isRegistered<GetReceivedPeerEvaluationsUseCase>()) {
       if (!Get.isRegistered<PeerEvaluationRepository>()) {
         if (!Get.isRegistered<PeerEvaluationLocalDataSource>()) {
-          Get.lazyPut<PeerEvaluationLocalDataSource>(() => HivePeerEvaluationLocalDataSource(), fenix: true);
+          Get.lazyPut<PeerEvaluationLocalDataSource>(
+            () => HivePeerEvaluationLocalDataSource(),
+            fenix: true,
+          );
         }
         if (!Get.isRegistered<PeerEvaluationRemoteDataSource>()) {
-          Get.lazyPut<PeerEvaluationRemoteDataSource>(() => RoblePeerEvaluationRemoteDataSource(projectId: 'movil_993b654d20', debugLogging: true), fenix: true);
+          Get.lazyPut<PeerEvaluationRemoteDataSource>(
+            () => RoblePeerEvaluationRemoteDataSource(
+              projectId: 'movil_993b654d20',
+              debugLogging: true,
+            ),
+            fenix: true,
+          );
         }
-        Get.lazyPut<PeerEvaluationRepository>(() => PeerEvaluationRepositoryImpl(
-          remote: Get.find<PeerEvaluationRemoteDataSource>(),
-          localCache: Get.find<PeerEvaluationLocalDataSource>(),
-        ), fenix: true);
+        Get.lazyPut<PeerEvaluationRepository>(
+          () => PeerEvaluationRepositoryImpl(
+            remote: Get.find<PeerEvaluationRemoteDataSource>(),
+            localCache: Get.find<PeerEvaluationLocalDataSource>(),
+          ),
+          fenix: true,
+        );
       }
-      Get.lazyPut(() => GetReceivedPeerEvaluationsUseCase(Get.find<PeerEvaluationRepository>()), fenix: true);
+      Get.lazyPut(
+        () => GetReceivedPeerEvaluationsUseCase(
+          Get.find<PeerEvaluationRepository>(),
+        ),
+        fenix: true,
+      );
     }
     _getUseCase = Get.find<GetReceivedPeerEvaluationsUseCase>();
     _authLocal = Get.find<AuthLocalDataSource>();
     final userId = _auth.currentUser.value?.id ?? '';
-    _future = _getUseCase(assessmentId: widget.assessment.id, evaluateeId: userId);
+    _future = _getUseCase(
+      assessmentId: widget.assessment.id,
+      evaluateeId: userId,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Notas recibidas')),
+      appBar: const AppTopBar(title: 'Notas recibidas'),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: FutureBuilder<List<PeerEvaluationModel>>(
@@ -78,6 +104,7 @@ class _ReceivedEvaluationsPageState extends State<ReceivedEvaluationsPage> {
               final sum = list.fold<num>(0, (p, e) => p + sel(e));
               return sum / list.length;
             }
+
             final avgP = avg((e) => e.punctuality);
             final avgC = avg((e) => e.contributions);
             final avgCm = avg((e) => e.commitment);
@@ -88,7 +115,10 @@ class _ReceivedEvaluationsPageState extends State<ReceivedEvaluationsPage> {
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Actividad: ${widget.activity.name}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                Text(
+                  'Actividad: ${widget.activity.name}',
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
                 const SizedBox(height: 12),
                 Expanded(
                   child: Scrollbar(
@@ -110,24 +140,40 @@ class _ReceivedEvaluationsPageState extends State<ReceivedEvaluationsPage> {
                           ],
                           rows: [
                             for (final e in list)
-                              DataRow(cells: [
-                                DataCell(SizedBox(
-                                  width: 180,
-                                  child: _EvaluatorName(userId: e.evaluatorId, authLocal: _authLocal),
-                                )),
-                                DataCell(Text(e.punctuality.toString())),
-                                DataCell(Text(e.contributions.toString())),
-                                DataCell(Text(e.commitment.toString())),
-                                DataCell(Text(e.attitude.toString())),
-                              ]),
+                              DataRow(
+                                cells: [
+                                  DataCell(
+                                    SizedBox(
+                                      width: 180,
+                                      child: _EvaluatorName(
+                                        userId: e.evaluatorId,
+                                        authLocal: _authLocal,
+                                      ),
+                                    ),
+                                  ),
+                                  DataCell(Text(e.punctuality.toString())),
+                                  DataCell(Text(e.contributions.toString())),
+                                  DataCell(Text(e.commitment.toString())),
+                                  DataCell(Text(e.attitude.toString())),
+                                ],
+                              ),
                             // Average row
-                            DataRow(cells: [
-                              const DataCell(Text('Promedio', style: TextStyle(fontWeight: FontWeight.w700))),
-                              DataCell(Text(fmt(avgP))),
-                              DataCell(Text(fmt(avgC))),
-                              DataCell(Text(fmt(avgCm))),
-                              DataCell(Text(fmt(avgA))),
-                            ]),
+                            DataRow(
+                              cells: [
+                                const DataCell(
+                                  Text(
+                                    'Promedio',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ),
+                                DataCell(Text(fmt(avgP))),
+                                DataCell(Text(fmt(avgC))),
+                                DataCell(Text(fmt(avgCm))),
+                                DataCell(Text(fmt(avgA))),
+                              ],
+                            ),
                           ],
                         ),
                       ),
@@ -170,8 +216,10 @@ class _EvaluatorName extends StatelessWidget {
       future: authLocal.fetchUserById(userId),
       builder: (context, snapshot) {
         final name = snapshot.data?.name;
-        return Text(name == null || name.trim().isEmpty ? userId : name,
-            style: const TextStyle(fontWeight: FontWeight.w600));
+        return Text(
+          name == null || name.trim().isEmpty ? userId : name,
+          style: const TextStyle(fontWeight: FontWeight.w600),
+        );
       },
     );
   }

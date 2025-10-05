@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../../../../core/ui/widgets/app_top_bar.dart';
 import '../../domain/models/course_model.dart';
 import '../../../auth/ui/controllers/auth_controller.dart';
 import '../../ui/controllers/course_controller.dart';
@@ -225,7 +226,7 @@ class _CourseDetailPageState extends State<CourseDetailPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Detalle Curso')),
+      appBar: const AppTopBar(title: 'Detalle Curso'),
       body: Obx(() {
         final course = _currentCourseSnapshot();
         return Column(

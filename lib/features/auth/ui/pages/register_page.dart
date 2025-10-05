@@ -14,6 +14,7 @@ class _RegisterPageState extends State<RegisterPage> {
   final _nameCtrl = TextEditingController();
   final _emailCtrl = TextEditingController();
   final _passCtrl = TextEditingController();
+  bool _obscurePass = true;
 
   @override
   void dispose() {
@@ -27,7 +28,7 @@ class _RegisterPageState extends State<RegisterPage> {
   Widget build(BuildContext context) {
     final controller = Get.find<AuthController>();
     return Scaffold(
-      backgroundColor: const Color(0xFFE0F2F1),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -38,12 +39,20 @@ class _RegisterPageState extends State<RegisterPage> {
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   const SizedBox(height: 8),
-                  Text(
-                    'REGISTRO',
-                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 2,
-                    ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.person_add_alt_1_outlined,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Crear cuenta',
+                        style: Theme.of(context).textTheme.headlineMedium
+                            ?.copyWith(fontWeight: FontWeight.w700),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 16),
                   Container(
@@ -68,7 +77,7 @@ class _RegisterPageState extends State<RegisterPage> {
                           Container(
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: Colors.red.withOpacity(0.06),
+                              color: Colors.red.withValues(alpha: 0.06),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Text(
@@ -84,49 +93,40 @@ class _RegisterPageState extends State<RegisterPage> {
                         TextField(
                           controller: _nameCtrl,
                           textCapitalization: TextCapitalization.words,
-                          decoration: InputDecoration(
+                          decoration: const InputDecoration(
                             labelText: 'Nombre',
-                            prefixIcon: const Icon(Icons.person_outline),
-                            filled: true,
-                            fillColor: const Color(0xFFF7F9FA),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(14),
-                              borderSide: BorderSide.none,
-                            ),
+                            prefixIcon: Icon(Icons.person_outline),
                           ),
                         ),
                         const SizedBox(height: 12),
                         TextField(
                           controller: _emailCtrl,
                           keyboardType: TextInputType.emailAddress,
-                          decoration: InputDecoration(
+                          decoration: const InputDecoration(
                             labelText: 'Email',
-                            prefixIcon: const Icon(Icons.email_outlined),
-                            filled: true,
-                            fillColor: const Color(0xFFF7F9FA),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(14),
-                              borderSide: BorderSide.none,
-                            ),
+                            prefixIcon: Icon(Icons.email_outlined),
                           ),
                         ),
                         const SizedBox(height: 12),
                         TextField(
                           controller: _passCtrl,
+                          obscureText: _obscurePass,
                           decoration: InputDecoration(
                             labelText: 'Password',
                             prefixIcon: const Icon(Icons.lock_outline),
-                            suffixIcon: const Icon(
-                              Icons.visibility_off_outlined,
-                            ),
-                            filled: true,
-                            fillColor: const Color(0xFFF7F9FA),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(14),
-                              borderSide: BorderSide.none,
+                            suffixIcon: IconButton(
+                              tooltip: _obscurePass
+                                  ? 'Mostrar contraseña'
+                                  : 'Ocultar contraseña',
+                              icon: Icon(
+                                _obscurePass
+                                    ? Icons.visibility_off_outlined
+                                    : Icons.visibility_outlined,
+                              ),
+                              onPressed: () =>
+                                  setState(() => _obscurePass = !_obscurePass),
                             ),
                           ),
-                          obscureText: true,
                         ),
                         const SizedBox(height: 16),
                         SizedBox(

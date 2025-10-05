@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../../../../core/ui/widgets/app_top_bar.dart';
 import '../controllers/group_controller.dart';
 import '../controllers/course_controller.dart';
 import '../../../auth/data/datasources/auth_local_datasource.dart';
@@ -11,7 +12,13 @@ class CourseGroupListPage extends StatefulWidget {
   final String categoryId;
   final String categoryName;
   final bool isManualCategory;
-  const CourseGroupListPage({super.key, required this.courseId, required this.categoryId, required this.categoryName, required this.isManualCategory});
+  const CourseGroupListPage({
+    super.key,
+    required this.courseId,
+    required this.categoryId,
+    required this.categoryName,
+    required this.isManualCategory,
+  });
 
   @override
   State<CourseGroupListPage> createState() => _CourseGroupListPageState();
@@ -36,7 +43,9 @@ class _CourseGroupListPageState extends State<CourseGroupListPage> {
     // Determine teacher role based on courseId
     try {
       final courseCtrl = Get.find<CourseController>();
-      final course = courseCtrl.courses.firstWhereOrNull((c) => c.id == widget.courseId);
+      final course = courseCtrl.courses.firstWhereOrNull(
+        (c) => c.id == widget.courseId,
+      );
       final uid = _auth.currentUser.value?.id;
       _isTeacher = (course?.teacherId == uid);
     } catch (_) {
@@ -45,17 +54,27 @@ class _CourseGroupListPageState extends State<CourseGroupListPage> {
     if (mounted) setState(() {});
   }
 
-  Future<void> _createAuto() async { await _controller.create(courseId: widget.courseId, categoryId: widget.categoryId); }
+  Future<void> _createAuto() async {
+    await _controller.create(
+      courseId: widget.courseId,
+      categoryId: widget.categoryId,
+    );
+  }
 
   void _promptAddMember(String groupId) {
     final coursesCtrl = Get.find<CourseController>();
-    final course = coursesCtrl.courses.firstWhereOrNull((c) => c.id == widget.courseId);
+    final course = coursesCtrl.courses.firstWhereOrNull(
+      (c) => c.id == widget.courseId,
+    );
     final allStudents = (course?.studentIds ?? []).toList();
     // Excluir alumnos ya asignados a cualquier grupo de esta categoría
     final assigned = _controller.groups.expand((g) => g.memberIds).toSet();
     final available = allStudents.where((s) => !assigned.contains(s)).toList();
     if (available.isEmpty) {
-      Get.snackbar('Sin alumnos disponibles', 'No hay estudiantes registrados para agregar');
+      Get.snackbar(
+        'Sin alumnos disponibles',
+        'No hay estudiantes registrados para agregar',
+      );
       return;
     }
     String? selected = available.first;
@@ -81,28 +100,47 @@ class _CourseGroupListPageState extends State<CourseGroupListPage> {
                 ),
             ],
             onChanged: (v) => setSt(() => selected = v),
-            decoration: const InputDecoration(labelText: 'Alumno', border: OutlineInputBorder()),
+            decoration: const InputDecoration(
+              labelText: 'Alumno',
+              border: OutlineInputBorder(),
+            ),
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
-          Obx(() => _controller.addingMember.value
-              ? const SizedBox(width: 32, height: 32, child: Center(child: CircularProgressIndicator(strokeWidth: 2)))
-              : TextButton(
-                  onPressed: () async {
-                    if (selected == null) return;
-                    await _controller.addMember(groupId, selected!);
-                    if (mounted) Navigator.pop(context);
-                  },
-                  child: const Text('Añadir'),
-                )),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
+          Obx(
+            () => _controller.addingMember.value
+                ? const SizedBox(
+                    width: 32,
+                    height: 32,
+                    child: Center(
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                  )
+                : TextButton(
+                    onPressed: () async {
+                      if (selected == null) return;
+                      await _controller.addMember(groupId, selected!);
+                      if (mounted) Navigator.pop(context);
+                    },
+                    child: const Text('Añadir'),
+                  ),
+          ),
         ],
       ),
     );
   }
 
-  Future<void> _promptMoveMember({required String fromGroupId, required String memberName}) async {
-  final groups = _controller.groups.where((g) => g.id != fromGroupId && _controller.canAddToGroup(g.id)).toList();
+  Future<void> _promptMoveMember({
+    required String fromGroupId,
+    required String memberName,
+  }) async {
+    final groups = _controller.groups
+        .where((g) => g.id != fromGroupId && _controller.canAddToGroup(g.id))
+        .toList();
     if (groups.isEmpty) {
       Get.snackbar('Sin opciones', 'No hay grupos disponibles con cupo');
       return;
@@ -119,7 +157,9 @@ class _CourseGroupListPageState extends State<CourseGroupListPage> {
               for (final g in groups)
                 DropdownMenuItem(
                   value: g.id,
-                  child: Text('${g.name} (${g.memberIds.length}/${_controller.categoryMaxFor(g.categoryId)})'),
+                  child: Text(
+                    '${g.name} (${g.memberIds.length}/${_controller.categoryMaxFor(g.categoryId)})',
+                  ),
                 ),
             ],
             onChanged: (v) => setSt(() => selectedId = v),
@@ -127,17 +167,32 @@ class _CourseGroupListPageState extends State<CourseGroupListPage> {
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
-          Obx(() => _controller.movingMember.value
-              ? const SizedBox(width: 32, height: 32, child: Center(child: CircularProgressIndicator(strokeWidth: 2)))
-              : ElevatedButton(
-                  onPressed: () async {
-                    if (selectedId == null) return;
-                    final res = await _controller.moveMember(fromGroupId: fromGroupId, toGroupId: selectedId!, memberName: memberName);
-                    if (res != null && mounted) Navigator.pop(context, true);
-                  },
-                  child: const Text('Mover'),
-                )),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          Obx(
+            () => _controller.movingMember.value
+                ? const SizedBox(
+                    width: 32,
+                    height: 32,
+                    child: Center(
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                  )
+                : ElevatedButton(
+                    onPressed: () async {
+                      if (selectedId == null) return;
+                      final res = await _controller.moveMember(
+                        fromGroupId: fromGroupId,
+                        toGroupId: selectedId!,
+                        memberName: memberName,
+                      );
+                      if (res != null && mounted) Navigator.pop(context, true);
+                    },
+                    child: const Text('Mover'),
+                  ),
+          ),
         ],
       ),
     );
@@ -153,16 +208,28 @@ class _CourseGroupListPageState extends State<CourseGroupListPage> {
         title: const Text('Eliminar grupo'),
         content: Text('¿Eliminar "$name"?'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
-          Obx(() => _controller.deleting.value
-              ? const SizedBox(height: 24, width: 24, child: CircularProgressIndicator(strokeWidth: 2))
-              : TextButton(
-                  onPressed: () async {
-                    final ok = await _controller.delete(id);
-                    if (ok && mounted) Navigator.pop(context);
-                  },
-                  child: const Text('Eliminar', style: TextStyle(color: Colors.red)),
-                )),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
+          Obx(
+            () => _controller.deleting.value
+                ? const SizedBox(
+                    height: 24,
+                    width: 24,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : TextButton(
+                    onPressed: () async {
+                      final ok = await _controller.delete(id);
+                      if (ok && mounted) Navigator.pop(context);
+                    },
+                    child: const Text(
+                      'Eliminar',
+                      style: TextStyle(color: Colors.red),
+                    ),
+                  ),
+          ),
         ],
       ),
     );
@@ -171,10 +238,12 @@ class _CourseGroupListPageState extends State<CourseGroupListPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Grupos • ${widget.categoryName}')),
+      appBar: AppTopBar(title: 'Grupos • ${widget.categoryName}'),
       body: Obx(() {
-        if (_controller.loading.value) return const Center(child: CircularProgressIndicator());
-        if (_controller.groups.isEmpty) return const Center(child: Text('Aún no hay grupos'));
+        if (_controller.loading.value)
+          return const Center(child: CircularProgressIndicator());
+        if (_controller.groups.isEmpty)
+          return const Center(child: Text('Aún no hay grupos'));
         return ListView.builder(
           itemCount: _controller.groups.length,
           itemBuilder: (_, i) {
@@ -186,19 +255,26 @@ class _CourseGroupListPageState extends State<CourseGroupListPage> {
                   ListTile(
                     title: Text(g.name),
                     // Left side icon is visual only (no tap action)
-                    leading: Icon(expanded ? Icons.expand_less : Icons.group_outlined),
+                    leading: Icon(
+                      expanded ? Icons.expand_less : Icons.group_outlined,
+                    ),
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         // Toggle members panel (always allowed)
                         IconButton(
                           icon: const Icon(Icons.people_outline),
-                          tooltip: expanded ? 'Ocultar integrantes' : 'Ver integrantes',
+                          tooltip: expanded
+                              ? 'Ocultar integrantes'
+                              : 'Ver integrantes',
                           onPressed: () => _controller.toggleExpanded(g.id),
                         ),
                         if (_isTeacher)
                           IconButton(
-                            icon: const Icon(Icons.delete_outline, color: Colors.red),
+                            icon: const Icon(
+                              Icons.delete_outline,
+                              color: Colors.red,
+                            ),
                             onPressed: () => _confirmDelete(g.id, g.name),
                           ),
                       ],
@@ -216,7 +292,13 @@ class _CourseGroupListPageState extends State<CourseGroupListPage> {
                             child: g.memberIds.isEmpty
                                 ? const Padding(
                                     padding: EdgeInsets.symmetric(vertical: 8),
-                                    child: Text('Sin integrantes todavía', style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic)),
+                                    child: Text(
+                                      'Sin integrantes todavía',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontStyle: FontStyle.italic,
+                                      ),
+                                    ),
                                   )
                                 : Scrollbar(
                                     child: ListView.builder(
@@ -224,47 +306,94 @@ class _CourseGroupListPageState extends State<CourseGroupListPage> {
                                       itemCount: g.memberIds.length,
                                       itemBuilder: (_, j) {
                                         final member = g.memberIds[j];
-                                        final authLocal = HiveAuthLocalDataSource();
+                                        final authLocal =
+                                            HiveAuthLocalDataSource();
                                         return FutureBuilder(
-                                          future: authLocal.fetchUserById(member),
+                                          future: authLocal.fetchUserById(
+                                            member,
+                                          ),
                                           builder: (context, snapshot) {
-                                            final display = snapshot.data?.name ?? member;
+                                            final display =
+                                                snapshot.data?.name ?? member;
                                             return ListTile(
                                               dense: true,
-                                              leading: const Icon(Icons.person_outline, size: 18),
+                                              leading: const Icon(
+                                                Icons.person_outline,
+                                                size: 18,
+                                              ),
                                               title: Text(display),
                                               trailing: Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
                                                   if (_isTeacher)
                                                     IconButton(
-                                                      icon: const Icon(Icons.swap_horiz_outlined),
-                                                      tooltip: 'Cambiar de grupo',
-                                                      onPressed: () => _promptMoveMember(fromGroupId: g.id, memberName: display),
+                                                      icon: const Icon(
+                                                        Icons
+                                                            .swap_horiz_outlined,
+                                                      ),
+                                                      tooltip:
+                                                          'Cambiar de grupo',
+                                                      onPressed: () =>
+                                                          _promptMoveMember(
+                                                            fromGroupId: g.id,
+                                                            memberName: display,
+                                                          ),
                                                     ),
                                                   if (_isTeacher)
                                                     IconButton(
-                                                      icon: const Icon(Icons.delete_outline, color: Colors.red),
-                                                      tooltip: 'Quitar del grupo',
+                                                      icon: const Icon(
+                                                        Icons.delete_outline,
+                                                        color: Colors.red,
+                                                      ),
+                                                      tooltip:
+                                                          'Quitar del grupo',
                                                       onPressed: () async {
                                                         final ok = await showDialog<bool>(
                                                           context: context,
                                                           builder: (_) => AlertDialog(
-                                                            title: const Text('Quitar integrante'),
-                                                            content: Text('¿Quitar "$display" de ${g.name}?'),
+                                                            title: const Text(
+                                                              'Quitar integrante',
+                                                            ),
+                                                            content: Text(
+                                                              '¿Quitar "$display" de ${g.name}?',
+                                                            ),
                                                             actions: [
-                                                              TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
-                                                              TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Quitar')),
+                                                              TextButton(
+                                                                onPressed: () =>
+                                                                    Navigator.pop(
+                                                                      context,
+                                                                      false,
+                                                                    ),
+                                                                child:
+                                                                    const Text(
+                                                                      'Cancelar',
+                                                                    ),
+                                                              ),
+                                                              TextButton(
+                                                                onPressed: () =>
+                                                                    Navigator.pop(
+                                                                      context,
+                                                                      true,
+                                                                    ),
+                                                                child:
+                                                                    const Text(
+                                                                      'Quitar',
+                                                                    ),
+                                                              ),
                                                             ],
                                                           ),
                                                         );
                                                         if (ok == true) {
-                                                          await _controller.removeMember(g.id, member);
+                                                          await _controller
+                                                              .removeMember(
+                                                                g.id,
+                                                                member,
+                                                              );
                                                         }
                                                       },
                                                     ),
-                                            ],
-                                          ),
+                                                ],
+                                              ),
                                             );
                                           },
                                         );
@@ -277,8 +406,13 @@ class _CourseGroupListPageState extends State<CourseGroupListPage> {
                             Align(
                               alignment: Alignment.centerLeft,
                               child: FilledButton.icon(
-                                onPressed: !_controller.canAddToGroup(g.id) ? null : () => _promptAddMember(g.id),
-                                icon: const Icon(Icons.person_add_alt_1_outlined, size: 18),
+                                onPressed: !_controller.canAddToGroup(g.id)
+                                    ? null
+                                    : () => _promptAddMember(g.id),
+                                icon: const Icon(
+                                  Icons.person_add_alt_1_outlined,
+                                  size: 18,
+                                ),
                                 label: const Text('Añadir integrante'),
                               ),
                             ),
@@ -295,7 +429,10 @@ class _CourseGroupListPageState extends State<CourseGroupListPage> {
                               padding: EdgeInsets.only(top: 4),
                               child: Text(
                                 'Esta categoría asigna grupos al azar. No es posible unirse manualmente.',
-                                style: TextStyle(fontSize: 12, color: Colors.grey),
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey,
+                                ),
                               ),
                             ),
                         ],
@@ -309,7 +446,8 @@ class _CourseGroupListPageState extends State<CourseGroupListPage> {
         );
       }),
       floatingActionButton: _isTeacher
-          ? Obx(() => FloatingActionButton(
+          ? Obx(
+              () => FloatingActionButton(
                 onPressed: _controller.creating.value ? null : _createAuto,
                 child: _controller.creating.value
                     ? const Padding(
@@ -317,7 +455,8 @@ class _CourseGroupListPageState extends State<CourseGroupListPage> {
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
                     : const Icon(Icons.add),
-              ))
+              ),
+            )
           : null,
     );
   }
@@ -342,7 +481,9 @@ class _JoinOrLeaveRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ctrl = Get.find<CourseGroupController>();
-    final alreadyInSomeGroup = ctrl.groups.any((g) => g.categoryId == categoryId && g.memberIds.contains(currentUserId));
+    final alreadyInSomeGroup = ctrl.groups.any(
+      (g) => g.categoryId == categoryId && g.memberIds.contains(currentUserId),
+    );
     if (isMember) {
       return Align(
         alignment: Alignment.centerLeft,
@@ -362,7 +503,11 @@ class _JoinOrLeaveRow extends StatelessWidget {
     return Align(
       alignment: Alignment.centerLeft,
       child: FilledButton.icon(
-        onPressed: canAdd ? () async { await ctrl.addMember(group.id, currentUserId); } : null,
+        onPressed: canAdd
+            ? () async {
+                await ctrl.addMember(group.id, currentUserId);
+              }
+            : null,
         icon: const Icon(Icons.login, size: 18),
         label: const Text('Unirme'),
       ),

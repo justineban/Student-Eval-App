@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../../../../core/ui/widgets/app_top_bar.dart';
 import '../controllers/home_controller.dart';
 
 class HomePage extends StatelessWidget {
@@ -9,20 +10,13 @@ class HomePage extends StatelessWidget {
   Widget build(BuildContext context) {
     final controller = Get.put(HomeController());
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Universidad del Norte'),
-        backgroundColor: Theme.of(context).colorScheme.primary,
-        foregroundColor: Colors.white,
-        elevation: 2,
-        scrolledUnderElevation: 2,
+      appBar: AppTopBar(
+        title: 'Student Eval',
         actions: [
           IconButton(icon: const Icon(Icons.refresh), onPressed: () {}),
           PopupMenuButton<String>(
-            itemBuilder: (ctx) => [
-              const PopupMenuItem(
-                value: 'logout',
-                child: Text('Cerrar sesión'),
-              ),
+            itemBuilder: (ctx) => const [
+              PopupMenuItem(value: 'logout', child: Text('Cerrar sesión')),
             ],
             onSelected: (v) {
               if (v == 'logout') controller.logout();
@@ -42,13 +36,13 @@ class HomePage extends StatelessWidget {
                 tiles: [
                   _TileItem(
                     label: 'Ver mis cursos',
-                    color: const Color(0xFFD1E8E4),
+                    color: Theme.of(context).colorScheme.secondaryContainer,
                     icon: Icons.menu_book_outlined,
                     onTap: controller.goToCourses,
                   ),
                   _TileItem(
                     label: 'Reporte de cursos',
-                    color: const Color(0xFFFFF3CD),
+                    color: Theme.of(context).colorScheme.tertiaryContainer,
                     icon: Icons.assessment_outlined,
                     onTap: controller.goToTeacherCoursesReport,
                   ),
@@ -61,13 +55,15 @@ class HomePage extends StatelessWidget {
                 tiles: [
                   _TileItem(
                     label: 'Mis cursos',
-                    color: const Color(0xFFE3F2FD),
+                    color: Theme.of(context).colorScheme.primaryContainer,
                     icon: Icons.class_outlined,
                     onTap: controller.goToEnrolledCourses,
                   ),
                   _TileItem(
                     label: 'Mis actividades',
-                    color: const Color(0xFFF3E5F5),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.surfaceContainerHighest,
                     icon: Icons.event_note_outlined,
                     onTap: controller.goToMyActivities,
                   ),
@@ -149,8 +145,8 @@ class _Tile extends StatelessWidget {
                     color: item.color,
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  padding: const EdgeInsets.all(8),
-                  child: Icon(item.icon, size: 24, color: Colors.black54),
+                  padding: const EdgeInsets.all(10),
+                  child: Icon(item.icon, size: 32, color: Colors.black54),
                 ),
               ),
               const Spacer(),

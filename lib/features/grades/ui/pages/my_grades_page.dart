@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../../../../core/ui/widgets/app_top_bar.dart';
 import 'package:hive/hive.dart';
 import '../../../../core/storage/hive_boxes.dart';
 import '../../../auth/ui/controllers/auth_controller.dart';
@@ -86,7 +87,7 @@ class _MyGradesPageState extends State<MyGradesPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Mis notas')),
+      appBar: const AppTopBar(title: 'Mis notas'),
       body: Obx(() {
         final loading = _studentCtrl.loading.value;
         final courses = _studentCtrl.enrolled;

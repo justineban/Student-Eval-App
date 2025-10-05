@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:get/get.dart';
+import '../../../../core/ui/widgets/app_top_bar.dart';
 import '../../domain/models/activity_model.dart';
 import '../../domain/models/assessment_model.dart';
 import '../controllers/activity_controller.dart';
@@ -52,10 +53,10 @@ class _ActivityDetailPageState extends State<ActivityDetailPage> {
       );
     }
     _assessmentController = Get.find<AssessmentController>();
-  _authController = Get.find<AuthController>();
+    _authController = Get.find<AuthController>();
     // Load any existing assessment for this activity
     _assessmentController.loadForActivity(widget.activity.id);
-  _initRole();
+    _initRole();
     // Simple ticker to refresh countdown every second
     _tickTimer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (mounted) setState(() {});
@@ -73,32 +74,46 @@ class _ActivityDetailPageState extends State<ActivityDetailPage> {
   @override
   Widget build(BuildContext context) {
     final a = widget.activity;
-  dynamic category;
+    dynamic category;
     for (final c in _categoryController.categories) {
-      if (c.id == a.categoryId) { category = c; break; }
+      if (c.id == a.categoryId) {
+        category = c;
+        break;
+      }
     }
     return Scaffold(
-      appBar: AppBar(title: const Text('Detalle de actividad')),
+      appBar: const AppTopBar(title: 'Detalle de actividad'),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(a.name, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+            Text(
+              a.name,
+              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 8),
             Row(
               children: [
-                const Text('Categoría: ', style: TextStyle(fontWeight: FontWeight.w600)),
+                const Text(
+                  'Categoría: ',
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
                 Text(category?.name ?? '—'),
               ],
             ),
             const SizedBox(height: 8),
             Row(
               children: [
-                const Text('Fecha límite: ', style: TextStyle(fontWeight: FontWeight.w600)),
-                Text(a.dueDate == null
-                    ? 'Sin fecha'
-                    : '${a.dueDate!.day}/${a.dueDate!.month}/${a.dueDate!.year}'),
+                const Text(
+                  'Fecha límite: ',
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
+                Text(
+                  a.dueDate == null
+                      ? 'Sin fecha'
+                      : '${a.dueDate!.day}/${a.dueDate!.month}/${a.dueDate!.year}',
+                ),
               ],
             ),
             const SizedBox(height: 16),
@@ -113,18 +128,19 @@ class _ActivityDetailPageState extends State<ActivityDetailPage> {
                 },
               ),
             const SizedBox(height: 16),
-            const Text('Descripción', style: TextStyle(fontWeight: FontWeight.w600)),
-            const SizedBox(height: 6),
-            Text(
-              a.description,
-              style: const TextStyle(fontSize: 16),
+            const Text(
+              'Descripción',
+              style: TextStyle(fontWeight: FontWeight.w600),
             ),
+            const SizedBox(height: 6),
+            Text(a.description, style: const TextStyle(fontSize: 16)),
             const Spacer(),
             // Assessment area
             Obx(() {
               final loading = _assessmentController.loading.value;
               final err = _assessmentController.error.value;
-              final AssessmentModel? current = _assessmentController.current.value;
+              final AssessmentModel? current =
+                  _assessmentController.current.value;
 
               if (loading) {
                 return const Center(child: CircularProgressIndicator());
@@ -169,8 +185,12 @@ class _ActivityDetailPageState extends State<ActivityDetailPage> {
                       onPressed: isCancelled
                           ? null
                           : () => setState(() => _panelOpen = !_panelOpen),
-                      icon: Icon(_panelOpen ? Icons.expand_more : Icons.expand_less),
-                      label: Text(_panelOpen ? 'Ocultar evaluación' : 'Ver evaluación'),
+                      icon: Icon(
+                        _panelOpen ? Icons.expand_more : Icons.expand_less,
+                      ),
+                      label: Text(
+                        _panelOpen ? 'Ocultar evaluación' : 'Ver evaluación',
+                      ),
                     ),
                   ),
                   AnimatedCrossFade(
@@ -180,47 +200,81 @@ class _ActivityDetailPageState extends State<ActivityDetailPage> {
                       remainingText: remainingText,
                       isTeacher: _isTeacher,
                       showViewGrades: _isTeacher ? true : current.gradesVisible,
-                      onToggleGrades: !_isTeacher || isCancelled ? null : () => _assessmentController.toggleGradesVisibility(),
+                      onToggleGrades: !_isTeacher || isCancelled
+                          ? null
+                          : () =>
+                                _assessmentController.toggleGradesVisibility(),
                       onEdit: !_isTeacher || isCancelled
                           ? null
                           : () => _showEditAssessmentDialog(current),
                       onCancel: !_isTeacher || isCancelled
                           ? null
                           : () async {
-                              final confirm = await _confirm(context, '¿Cancelar evaluación?', 'Se eliminará la evaluación y podrás crear una nueva.');
+                              final confirm = await _confirm(
+                                context,
+                                '¿Cancelar evaluación?',
+                                'Se eliminará la evaluación y podrás crear una nueva.',
+                              );
                               if (confirm == true) {
                                 try {
                                   await _assessmentController.cancel();
-                                  if (mounted) setState(() { _panelOpen = false; });
+                                  if (mounted)
+                                    setState(() {
+                                      _panelOpen = false;
+                                    });
                                 } catch (_) {
-                                  final msg = _assessmentController.error.value ?? 'Ocurrió un error al cancelar';
+                                  final msg =
+                                      _assessmentController.error.value ??
+                                      'Ocurrió un error al cancelar';
                                   Get.snackbar('Error', msg);
                                 }
                               }
                             },
                       onViewGrades: () {
                         if (_isTeacher) {
-                          Get.to(() => TeacherGradesPage(activity: a, assessment: current));
+                          Get.to(
+                            () => TeacherGradesPage(
+                              activity: a,
+                              assessment: current,
+                            ),
+                          );
                         } else {
-                          Get.to(() => ReceivedEvaluationsPage(activity: a, assessment: current));
+                          Get.to(
+                            () => ReceivedEvaluationsPage(
+                              activity: a,
+                              assessment: current,
+                            ),
+                          );
                         }
                       },
                       onEvaluate: _isTeacher || isCancelled
                           ? null
                           : (remaining.isNegative
-                              ? null
-                              : () {
-                                  // Student-only: navigate to evaluation page
-                                  Get.to(() => ActivityEvaluationPage(activity: a, assessment: current));
-                                }),
+                                ? null
+                                : () {
+                                    // Student-only: navigate to evaluation page
+                                    Get.to(
+                                      () => ActivityEvaluationPage(
+                                        activity: a,
+                                        assessment: current,
+                                      ),
+                                    );
+                                  }),
                     ),
-                    crossFadeState: _panelOpen ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+                    crossFadeState: _panelOpen
+                        ? CrossFadeState.showSecond
+                        : CrossFadeState.showFirst,
                     duration: const Duration(milliseconds: 200),
                   ),
                   if (isCancelled)
                     Padding(
                       padding: const EdgeInsets.only(top: 8.0),
-                      child: Text('Evaluación cancelada', style: TextStyle(color: Theme.of(context).colorScheme.error)),
+                      child: Text(
+                        'Evaluación cancelada',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.error,
+                        ),
+                      ),
                     ),
                 ],
               );
@@ -231,11 +285,14 @@ class _ActivityDetailPageState extends State<ActivityDetailPage> {
       ),
     );
   }
+
   Future<void> _initRole() async {
     try {
       final courseCtrl = Get.find<CourseController>();
       final userId = _authController.currentUser.value?.id;
-      final course = courseCtrl.courses.firstWhereOrNull((c) => c.id == widget.activity.courseId);
+      final course = courseCtrl.courses.firstWhereOrNull(
+        (c) => c.id == widget.activity.courseId,
+      );
       _isTeacher = (course?.teacherId == userId);
     } catch (_) {
       _isTeacher = false;
@@ -256,7 +313,9 @@ class _ActivityDetailPageState extends State<ActivityDetailPage> {
 
   Future<void> _showEditAssessmentDialog(AssessmentModel a) async {
     final titleCtrl = TextEditingController(text: a.title);
-    final durationCtrl = TextEditingController(text: a.durationMinutes.toString());
+    final durationCtrl = TextEditingController(
+      text: a.durationMinutes.toString(),
+    );
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -271,13 +330,21 @@ class _ActivityDetailPageState extends State<ActivityDetailPage> {
             TextField(
               controller: durationCtrl,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: 'Duración (minutos)'),
+              decoration: const InputDecoration(
+                labelText: 'Duración (minutos)',
+              ),
             ),
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Cancelar')),
-          ElevatedButton(onPressed: () => Navigator.of(ctx).pop(true), child: const Text('Guardar')),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Guardar'),
+          ),
         ],
       ),
     );
@@ -288,7 +355,10 @@ class _ActivityDetailPageState extends State<ActivityDetailPage> {
         Get.snackbar('Datos inválidos', 'Ingresa un título y duración válidos');
         return;
       }
-      await _assessmentController.updateMeta(title: title, durationMinutes: minutes);
+      await _assessmentController.updateMeta(
+        title: title,
+        durationMinutes: minutes,
+      );
       if (mounted) setState(() {});
     }
   }
@@ -300,14 +370,23 @@ class _ActivityDetailPageState extends State<ActivityDetailPage> {
         title: Text(title),
         content: Text(message),
         actions: [
-          TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('No')),
-          ElevatedButton(onPressed: () => Navigator.of(ctx).pop(true), child: const Text('Sí')),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('No'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Sí'),
+          ),
         ],
       ),
     );
   }
 
-  Future<void> _openCreateAssessmentDialog(BuildContext context, ActivityModel a) async {
+  Future<void> _openCreateAssessmentDialog(
+    BuildContext context,
+    ActivityModel a,
+  ) async {
     _createTitleCtrl.text = '';
     _createDurationCtrl.text = '60';
     _createGradesVisible = true;
@@ -320,12 +399,16 @@ class _ActivityDetailPageState extends State<ActivityDetailPage> {
           children: [
             TextField(
               controller: _createTitleCtrl,
-              decoration: const InputDecoration(labelText: 'Título de la evaluación'),
+              decoration: const InputDecoration(
+                labelText: 'Título de la evaluación',
+              ),
             ),
             TextField(
               controller: _createDurationCtrl,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: 'Duración (minutos)'),
+              decoration: const InputDecoration(
+                labelText: 'Duración (minutos)',
+              ),
             ),
             const SizedBox(height: 8),
             Row(
@@ -343,8 +426,14 @@ class _ActivityDetailPageState extends State<ActivityDetailPage> {
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Cancelar')),
-          ElevatedButton(onPressed: () => Navigator.of(ctx).pop(true), child: const Text('Crear')),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Crear'),
+          ),
         ],
       ),
     );
@@ -364,7 +453,9 @@ class _ActivityDetailPageState extends State<ActivityDetailPage> {
         gradesVisible: _createGradesVisible,
       );
       if (created != null && mounted) {
-        setState(() { _panelOpen = true; });
+        setState(() {
+          _panelOpen = true;
+        });
       }
     }
   }
@@ -421,10 +512,16 @@ class _EvaluationPanel extends StatelessWidget {
           const SizedBox(height: 8),
           Row(
             children: [
-              const Text('Límite: ', style: TextStyle(fontWeight: FontWeight.w600)),
+              const Text(
+                'Límite: ',
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
               Text('${assessment.durationMinutes} min'),
               const SizedBox(width: 16),
-              const Text('Restante: ', style: TextStyle(fontWeight: FontWeight.w600)),
+              const Text(
+                'Restante: ',
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
               Text(remainingText),
             ],
           ),
@@ -436,7 +533,9 @@ class _EvaluationPanel extends StatelessWidget {
                 const SizedBox(width: 8),
                 Switch(
                   value: assessment.gradesVisible,
-                  onChanged: onToggleGrades == null ? null : (_) => onToggleGrades!(),
+                  onChanged: onToggleGrades == null
+                      ? null
+                      : (_) => onToggleGrades!(),
                 ),
               ],
             ),
@@ -476,7 +575,9 @@ class _EvaluationPanel extends StatelessWidget {
                 Expanded(
                   child: FilledButton.icon(
                     onPressed: onCancel,
-                    style: FilledButton.styleFrom(backgroundColor: Theme.of(context).colorScheme.error),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: Theme.of(context).colorScheme.error,
+                    ),
                     icon: const Icon(Icons.cancel_outlined),
                     label: const Text('Cancelar'),
                   ),

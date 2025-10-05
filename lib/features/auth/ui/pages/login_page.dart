@@ -15,6 +15,7 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final _emailCtrl = TextEditingController();
   final _passwordCtrl = TextEditingController();
+  bool _obscurePassword = true;
 
   @override
   void dispose() {
@@ -28,7 +29,7 @@ class _LoginPageState extends State<LoginPage> {
     final controller = Get.find<AuthController>();
     final theme = Theme.of(context);
     return Scaffold(
-      backgroundColor: const Color(0xFFE0F2F1),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -39,12 +40,21 @@ class _LoginPageState extends State<LoginPage> {
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   const SizedBox(height: 8),
-                  Text(
-                    'App de Evaluación',
-                    style: theme.textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 2,
-                    ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.school_outlined,
+                        color: theme.colorScheme.primary,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Student Eval',
+                        style: theme.textTheme.headlineMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 16),
                   // Card container
@@ -70,7 +80,7 @@ class _LoginPageState extends State<LoginPage> {
                           Container(
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: Colors.red.withOpacity(0.06),
+                              color: Colors.red.withValues(alpha: 0.06),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Text(
@@ -89,12 +99,7 @@ class _LoginPageState extends State<LoginPage> {
                           decoration: InputDecoration(
                             labelText: 'Email',
                             prefixIcon: const Icon(Icons.email_outlined),
-                            filled: true,
-                            fillColor: const Color(0xFFF7F9FA),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(14),
-                              borderSide: BorderSide.none,
-                            ),
+                            // borders & fill come from theme
                           ),
                         ),
                         const SizedBox(height: 12),
@@ -103,17 +108,22 @@ class _LoginPageState extends State<LoginPage> {
                           decoration: InputDecoration(
                             labelText: 'Contraseña',
                             prefixIcon: const Icon(Icons.lock_outline),
-                            suffixIcon: const Icon(
-                              Icons.visibility_off_outlined,
+                            suffixIcon: IconButton(
+                              tooltip: _obscurePassword
+                                  ? 'Mostrar contraseña'
+                                  : 'Ocultar contraseña',
+                              icon: Icon(
+                                _obscurePassword
+                                    ? Icons.visibility_off_outlined
+                                    : Icons.visibility_outlined,
+                              ),
+                              onPressed: () => setState(
+                                () => _obscurePassword = !_obscurePassword,
+                              ),
                             ),
-                            filled: true,
-                            fillColor: const Color(0xFFF7F9FA),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(14),
-                              borderSide: BorderSide.none,
-                            ),
+                            // borders & fill come from theme
                           ),
-                          obscureText: true,
+                          obscureText: _obscurePassword,
                         ),
                         const SizedBox(height: 8),
                         Row(

@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../../../../core/ui/widgets/app_top_bar.dart';
+import '../../../../core/ui/widgets/list_button_card.dart';
 import '../controllers/student_courses_controller.dart';
-import '../../domain/models/course_model.dart';
 import 'course_detail_page.dart';
 
 class EnrolledCoursesPage extends StatefulWidget {
@@ -42,7 +43,7 @@ class _EnrolledCoursesPageState extends State<EnrolledCoursesPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Cursos inscritos')),
+      appBar: const AppTopBar(title: 'Cursos inscritos'),
       body: Obx(() {
         final loading = _controller.loading.value;
         final courses = _controller.enrolled;
@@ -77,7 +78,19 @@ class _EnrolledCoursesPageState extends State<EnrolledCoursesPage> {
                   physics: const NeverScrollableScrollPhysics(),
                   itemCount: courses.length,
                   separatorBuilder: (_, __) => const SizedBox(height: 8),
-                  itemBuilder: (_, i) => _CourseTile(course: courses[i]),
+                  itemBuilder: (_, i) {
+                    final c = courses[i];
+                    return ListButtonCard(
+                      leadingIcon: Icons.class_outlined,
+                      title: c.name,
+                      subtitle: c.description,
+                      trailingChip: '${c.studentIds.length} alumnos',
+                      containerColor: Theme.of(
+                        context,
+                      ).colorScheme.secondaryContainer.withValues(alpha: 0.75),
+                      onTap: () => Get.to(() => CourseDetailPage(course: c)),
+                    );
+                  },
                 ),
 
               const SizedBox(height: 24),
@@ -171,32 +184,84 @@ class _EnrolledCoursesPageState extends State<EnrolledCoursesPage> {
                   separatorBuilder: (_, __) => const SizedBox(height: 8),
                   itemBuilder: (_, i) {
                     final c = invites[i];
-                    return Card(
-                      child: ListTile(
-                        leading: const Icon(Icons.mail_outline),
-                        title: Text(c.name),
-                        subtitle: Text(c.description),
-                        trailing: loading
-                            ? const SizedBox(
-                                width: 24,
-                                height: 24,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
+                    return Material(
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.tertiaryContainer.withValues(alpha: 0.7),
+                      borderRadius: BorderRadius.circular(16),
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(16),
+                        onTap: () {},
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 14,
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 40,
+                                height: 40,
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context).colorScheme.primary,
+                                  borderRadius: BorderRadius.circular(12),
                                 ),
-                              )
-                            : TextButton(
-                                onPressed: () async {
-                                  final joined = await _controller.acceptInvite(
-                                    c.id,
-                                  );
-                                  if (joined != null) {
-                                    Get.off(
-                                      () => CourseDetailPage(course: joined),
-                                    );
-                                  }
-                                },
-                                child: const Text('Aceptar'),
+                                child: const Icon(
+                                  Icons.mail_outline,
+                                  color: Colors.white,
+                                ),
                               ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      c.name,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .titleMedium
+                                          ?.copyWith(
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      c.description,
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              loading
+                                  ? const SizedBox(
+                                      width: 24,
+                                      height: 24,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                      ),
+                                    )
+                                  : TextButton(
+                                      onPressed: () async {
+                                        final joined = await _controller
+                                            .acceptInvite(c.id);
+                                        if (joined != null) {
+                                          Get.off(
+                                            () => CourseDetailPage(
+                                              course: joined,
+                                            ),
+                                          );
+                                        }
+                                      },
+                                      child: const Text('Aceptar'),
+                                    ),
+                            ],
+                          ),
+                        ),
                       ),
                     );
                   },
@@ -209,19 +274,4 @@ class _EnrolledCoursesPageState extends State<EnrolledCoursesPage> {
   }
 }
 
-class _CourseTile extends StatelessWidget {
-  final CourseModel course;
-  const _CourseTile({required this.course});
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: ListTile(
-        title: Text(course.name),
-        subtitle: Text(course.description),
-        trailing: const Icon(Icons.chevron_right),
-        onTap: () => Get.to(() => CourseDetailPage(course: course)),
-      ),
-    );
-  }
-}
+// _CourseTile removed; replaced by ListButtonCard
