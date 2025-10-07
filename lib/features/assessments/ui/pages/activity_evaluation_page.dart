@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../../../../core/ui/widgets/app_top_bar.dart';
 import '../../../auth/ui/controllers/auth_controller.dart';
 import '../../../auth/data/datasources/auth_local_datasource.dart';
 import '../../../courses/ui/controllers/group_controller.dart';
@@ -16,7 +17,11 @@ import '../../../auth/domain/models/user_model.dart';
 class ActivityEvaluationPage extends StatefulWidget {
   final ActivityModel activity;
   final AssessmentModel assessment;
-  const ActivityEvaluationPage({super.key, required this.activity, required this.assessment});
+  const ActivityEvaluationPage({
+    super.key,
+    required this.activity,
+    required this.assessment,
+  });
 
   @override
   State<ActivityEvaluationPage> createState() => _ActivityEvaluationPageState();
@@ -40,17 +45,32 @@ class _ActivityEvaluationPageState extends State<ActivityEvaluationPage> {
     if (!Get.isRegistered<SavePeerEvaluationsUseCase>()) {
       if (!Get.isRegistered<PeerEvaluationRepository>()) {
         if (!Get.isRegistered<PeerEvaluationLocalDataSource>()) {
-          Get.lazyPut<PeerEvaluationLocalDataSource>(() => HivePeerEvaluationLocalDataSource(), fenix: true);
+          Get.lazyPut<PeerEvaluationLocalDataSource>(
+            () => HivePeerEvaluationLocalDataSource(),
+            fenix: true,
+          );
         }
         if (!Get.isRegistered<PeerEvaluationRemoteDataSource>()) {
-          Get.lazyPut<PeerEvaluationRemoteDataSource>(() => RoblePeerEvaluationRemoteDataSource(projectId: 'movil_993b654d20', debugLogging: true), fenix: true);
+          Get.lazyPut<PeerEvaluationRemoteDataSource>(
+            () => RoblePeerEvaluationRemoteDataSource(
+              projectId: 'movil_993b654d20',
+              debugLogging: true,
+            ),
+            fenix: true,
+          );
         }
-        Get.lazyPut<PeerEvaluationRepository>(() => PeerEvaluationRepositoryImpl(
-          remote: Get.find<PeerEvaluationRemoteDataSource>(),
-          localCache: Get.find<PeerEvaluationLocalDataSource>(),
-        ), fenix: true);
+        Get.lazyPut<PeerEvaluationRepository>(
+          () => PeerEvaluationRepositoryImpl(
+            remote: Get.find<PeerEvaluationRemoteDataSource>(),
+            localCache: Get.find<PeerEvaluationLocalDataSource>(),
+          ),
+          fenix: true,
+        );
       }
-      Get.lazyPut(() => SavePeerEvaluationsUseCase(Get.find<PeerEvaluationRepository>()), fenix: true);
+      Get.lazyPut(
+        () => SavePeerEvaluationsUseCase(Get.find<PeerEvaluationRepository>()),
+        fenix: true,
+      );
     }
     _saveUseCase = Get.find<SavePeerEvaluationsUseCase>();
     // Ensure groups loaded for category
@@ -61,15 +81,19 @@ class _ActivityEvaluationPageState extends State<ActivityEvaluationPage> {
   Widget build(BuildContext context) {
     final userId = _auth.currentUser.value?.id ?? '';
     return Scaffold(
-      appBar: AppBar(title: const Text('Evaluación de grupo')),
+      appBar: const AppTopBar(title: 'Evaluación de grupo'),
       body: Obx(() {
         if (_groupCtrl.loading.value) {
           return const Center(child: CircularProgressIndicator());
         }
         // Find user's group in this category
-        final myGroup = _groupCtrl.groups.firstWhereOrNull((g) => g.memberIds.contains(userId));
+        final myGroup = _groupCtrl.groups.firstWhereOrNull(
+          (g) => g.memberIds.contains(userId),
+        );
         if (myGroup == null) {
-          return const Center(child: Text('No perteneces a ningún grupo para esta categoría'));
+          return const Center(
+            child: Text('No perteneces a ningún grupo para esta categoría'),
+          );
         }
         final peers = myGroup.memberIds.where((m) => m != userId).toList();
         if (peers.isEmpty) {
@@ -97,7 +121,10 @@ class _ActivityEvaluationPageState extends State<ActivityEvaluationPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Actividad: ${widget.activity.name}', style: const TextStyle(fontWeight: FontWeight.bold)),
+              Text(
+                'Actividad: ${widget.activity.name}',
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
               const SizedBox(height: 12),
               Scrollbar(
                 controller: _hScrollCtrl,
@@ -118,40 +145,60 @@ class _ActivityEvaluationPageState extends State<ActivityEvaluationPage> {
                       ],
                       rows: [
                         for (final pid in peers)
-                          DataRow(cells: [
-                            DataCell(ConstrainedBox(
-                              constraints: const BoxConstraints(minWidth: 180),
-                              child: _MemberName(userId: pid),
-                            )),
-                            DataCell(SizedBox(
-                              width: 90,
-                              child: _RatingCell(
-                                value: _ratings[pid]!.punctuality,
-                                onChanged: (v) => _ratings[pid] = _ratings[pid]!.copyWith(punctuality: v),
+                          DataRow(
+                            cells: [
+                              DataCell(
+                                ConstrainedBox(
+                                  constraints: const BoxConstraints(
+                                    minWidth: 180,
+                                  ),
+                                  child: _MemberName(userId: pid),
+                                ),
                               ),
-                            )),
-                            DataCell(SizedBox(
-                              width: 110,
-                              child: _RatingCell(
-                                value: _ratings[pid]!.contributions,
-                                onChanged: (v) => _ratings[pid] = _ratings[pid]!.copyWith(contributions: v),
+                              DataCell(
+                                SizedBox(
+                                  width: 90,
+                                  child: _RatingCell(
+                                    value: _ratings[pid]!.punctuality,
+                                    onChanged: (v) => _ratings[pid] =
+                                        _ratings[pid]!.copyWith(punctuality: v),
+                                  ),
+                                ),
                               ),
-                            )),
-                            DataCell(SizedBox(
-                              width: 110,
-                              child: _RatingCell(
-                                value: _ratings[pid]!.commitment,
-                                onChanged: (v) => _ratings[pid] = _ratings[pid]!.copyWith(commitment: v),
+                              DataCell(
+                                SizedBox(
+                                  width: 110,
+                                  child: _RatingCell(
+                                    value: _ratings[pid]!.contributions,
+                                    onChanged: (v) =>
+                                        _ratings[pid] = _ratings[pid]!.copyWith(
+                                          contributions: v,
+                                        ),
+                                  ),
+                                ),
                               ),
-                            )),
-                            DataCell(SizedBox(
-                              width: 90,
-                              child: _RatingCell(
-                                value: _ratings[pid]!.attitude,
-                                onChanged: (v) => _ratings[pid] = _ratings[pid]!.copyWith(attitude: v),
+                              DataCell(
+                                SizedBox(
+                                  width: 110,
+                                  child: _RatingCell(
+                                    value: _ratings[pid]!.commitment,
+                                    onChanged: (v) => _ratings[pid] =
+                                        _ratings[pid]!.copyWith(commitment: v),
+                                  ),
+                                ),
                               ),
-                            )),
-                          ]),
+                              DataCell(
+                                SizedBox(
+                                  width: 90,
+                                  child: _RatingCell(
+                                    value: _ratings[pid]!.attitude,
+                                    onChanged: (v) => _ratings[pid] =
+                                        _ratings[pid]!.copyWith(attitude: v),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                       ],
                     ),
                   ),
@@ -163,7 +210,11 @@ class _ActivityEvaluationPageState extends State<ActivityEvaluationPage> {
                 child: FilledButton.icon(
                   onPressed: _saving ? null : _save,
                   icon: _saving
-                      ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
                       : const Icon(Icons.save_outlined),
                   label: const Text('Guardar evaluación'),
                 ),
@@ -228,4 +279,3 @@ class _RatingCell extends StatelessWidget {
     );
   }
 }
-

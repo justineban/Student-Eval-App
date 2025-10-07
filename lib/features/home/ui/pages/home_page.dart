@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../../../../core/ui/widgets/app_top_bar.dart';
 import '../controllers/home_controller.dart';
 
 class HomePage extends StatelessWidget {
@@ -9,51 +10,65 @@ class HomePage extends StatelessWidget {
   Widget build(BuildContext context) {
     final controller = Get.put(HomeController());
     return Scaffold(
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(60),
-        child: SafeArea(
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            alignment: Alignment.center,
-            child: Row(
-              children: [
-                const CircleAvatar(child: Icon(Icons.person)),
-                const SizedBox(width: 12),
-                Obx(() => Text(controller.userName, style: Theme.of(context).textTheme.titleMedium)),
-                const Spacer(),
-                IconButton(
-                  tooltip: 'Cerrar sesión',
-                  icon: const Icon(Icons.logout),
-                  onPressed: controller.logout,
-                ),
-              ],
-            ),
+      appBar: AppTopBar(
+        title: 'Student Eval',
+        actions: [
+          IconButton(icon: const Icon(Icons.refresh), onPressed: () {}),
+          PopupMenuButton<String>(
+            itemBuilder: (ctx) => const [
+              PopupMenuItem(value: 'logout', child: Text('Cerrar sesión')),
+            ],
+            onSelected: (v) {
+              if (v == 'logout') controller.logout();
+            },
           ),
-        ),
+        ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
+      body: SafeArea(
         child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _SectionTitle('Módulo de profesores'),
               const SizedBox(height: 8),
-              _ActionList(actions: const [
-                _ActionItem(label: 'Crear curso', actionKey: 'create_course'),
-                _ActionItem(label: 'Ver mis cursos', actionKey: 'list_courses'),
-                _ActionItem(label: 'Ver reporte de mis cursos', actionKey: 'teacher_courses_report'),
-              ]),
-              const SizedBox(height: 24),
+              _TilesGrid(
+                tiles: [
+                  _TileItem(
+                    label: 'Ver mis cursos',
+                    color: Theme.of(context).colorScheme.secondaryContainer,
+                    icon: Icons.menu_book_outlined,
+                    onTap: controller.goToCourses,
+                  ),
+                  _TileItem(
+                    label: 'Reporte de cursos',
+                    color: Theme.of(context).colorScheme.tertiaryContainer,
+                    icon: Icons.assessment_outlined,
+                    onTap: controller.goToTeacherCoursesReport,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
               _SectionTitle('Módulo de estudiantes'),
               const SizedBox(height: 8),
-              _ActionList(actions: const [
-                _ActionItem(label: 'Inscribirme a un curso', actionKey: 'enroll_course'),
-                _ActionItem(label: 'Cursos inscritos', actionKey: 'enrolled_courses'),
-                _ActionItem(label: 'Ver mis grupos', actionKey: 'my_groups'),
-                _ActionItem(label: 'Ver mis notas', actionKey: 'my_grades'),
-                _ActionItem(label: 'Actividades', actionKey: 'my_activities'),
-              ]),
+              _TilesGrid(
+                tiles: [
+                  _TileItem(
+                    label: 'Mis cursos',
+                    color: Theme.of(context).colorScheme.primaryContainer,
+                    icon: Icons.class_outlined,
+                    onTap: controller.goToEnrolledCourses,
+                  ),
+                  _TileItem(
+                    label: 'Mis actividades',
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.surfaceContainerHighest,
+                    icon: Icons.event_note_outlined,
+                    onTap: controller.goToMyActivities,
+                  ),
+                ],
+              ),
             ],
           ),
         ),
@@ -67,64 +82,79 @@ class _SectionTitle extends StatelessWidget {
   const _SectionTitle(this.text);
   @override
   Widget build(BuildContext context) => Text(
-        text,
-        style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-      );
+    text,
+    style: Theme.of(
+      context,
+    ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+  );
 }
 
-class _ActionItem {
-  final String label;
-  final String? actionKey; // used to map to controller methods
-  const _ActionItem({required this.label, this.actionKey});
-}
-
-class _ActionList extends StatelessWidget {
-  final List<_ActionItem> actions;
-  const _ActionList({required this.actions});
+class _TilesGrid extends StatelessWidget {
+  final List<_TileItem> tiles;
+  const _TilesGrid({required this.tiles});
 
   @override
   Widget build(BuildContext context) {
-    final home = Get.find<HomeController>();
-    return Column(
-      children: actions
-          .map((a) => Card(
-                child: ListTile(
-                  title: Text(a.label),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () {
-                    switch (a.actionKey) {
-                      case 'create_course':
-                        home.goToCreateCourse();
-                        break;
-                      case 'list_courses':
-                        home.goToCourses();
-                        break;
-                      case 'enroll_course':
-                        home.goToEnrollCourse();
-                        break;
-                      case 'enrolled_courses':
-                        home.goToEnrolledCourses();
-                        break;
-                      case 'my_groups':
-                        home.goToMyGroups();
-                        break;
-                      case 'my_grades':
-                        home.goToMyGrades();
-                        break;
-                      case 'my_activities':
-                        home.goToMyActivities();
-                        break;
-                      case 'teacher_courses_report':
-                        home.goToTeacherCoursesReport();
-                        break;
-                      default:
-                        // otros aun no implementados
-                        break;
-                    }
-                  },
+    return GridView.count(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      crossAxisCount: 2,
+      childAspectRatio: 1.45,
+      mainAxisSpacing: 12,
+      crossAxisSpacing: 12,
+      children: tiles.map((t) => _Tile(t)).toList(),
+    );
+  }
+}
+
+class _TileItem {
+  final String label;
+  final IconData icon;
+  final Color color;
+  final VoidCallback onTap;
+  const _TileItem({
+    required this.label,
+    required this.icon,
+    required this.color,
+    required this.onTap,
+  });
+}
+
+class _Tile extends StatelessWidget {
+  final _TileItem item;
+  const _Tile(this.item);
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(14),
+      elevation: 1.0,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(14),
+        onTap: item.onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Align(
+                alignment: Alignment.topLeft,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: item.color,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  padding: const EdgeInsets.all(10),
+                  child: Icon(item.icon, size: 32, color: Colors.black54),
                 ),
-              ))
-          .toList(),
+              ),
+              const Spacer(),
+              Text(item.label, style: Theme.of(context).textTheme.titleMedium),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

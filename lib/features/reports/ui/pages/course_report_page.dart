@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../../../../core/ui/widgets/app_top_bar.dart';
 import 'package:hive/hive.dart';
 import '../../../../core/storage/hive_boxes.dart';
 import '../../../courses/domain/models/course_model.dart';
@@ -35,17 +36,34 @@ class _CourseReportPageState extends State<CourseReportPage> {
     if (!Get.isRegistered<GetReceivedPeerEvaluationsUseCase>()) {
       if (!Get.isRegistered<PeerEvaluationRepository>()) {
         if (!Get.isRegistered<PeerEvaluationLocalDataSource>()) {
-          Get.lazyPut<PeerEvaluationLocalDataSource>(() => HivePeerEvaluationLocalDataSource(), fenix: true);
+          Get.lazyPut<PeerEvaluationLocalDataSource>(
+            () => HivePeerEvaluationLocalDataSource(),
+            fenix: true,
+          );
         }
         if (!Get.isRegistered<PeerEvaluationRemoteDataSource>()) {
-          Get.lazyPut<PeerEvaluationRemoteDataSource>(() => RoblePeerEvaluationRemoteDataSource(projectId: 'movil_993b654d20', debugLogging: true), fenix: true);
+          Get.lazyPut<PeerEvaluationRemoteDataSource>(
+            () => RoblePeerEvaluationRemoteDataSource(
+              projectId: 'movil_993b654d20',
+              debugLogging: true,
+            ),
+            fenix: true,
+          );
         }
-        Get.lazyPut<PeerEvaluationRepository>(() => PeerEvaluationRepositoryImpl(
-          remote: Get.find<PeerEvaluationRemoteDataSource>(),
-          localCache: Get.find<PeerEvaluationLocalDataSource>(),
-        ), fenix: true);
+        Get.lazyPut<PeerEvaluationRepository>(
+          () => PeerEvaluationRepositoryImpl(
+            remote: Get.find<PeerEvaluationRemoteDataSource>(),
+            localCache: Get.find<PeerEvaluationLocalDataSource>(),
+          ),
+          fenix: true,
+        );
       }
-      Get.lazyPut(() => GetReceivedPeerEvaluationsUseCase(Get.find<PeerEvaluationRepository>()), fenix: true);
+      Get.lazyPut(
+        () => GetReceivedPeerEvaluationsUseCase(
+          Get.find<PeerEvaluationRepository>(),
+        ),
+        fenix: true,
+      );
     }
     _getUseCase = Get.find<GetReceivedPeerEvaluationsUseCase>();
     _authLocal = Get.find<AuthLocalDataSource>();
@@ -59,7 +77,8 @@ class _CourseReportPageState extends State<CourseReportPage> {
     for (final key in cbox.keys) {
       final data = cbox.get(key);
       if (data is Map && data['id'] == widget.course.id) {
-        studentIds = (data['studentIds'] as List?)?.cast<String>() ?? <String>[];
+        studentIds =
+            (data['studentIds'] as List?)?.cast<String>() ?? <String>[];
         break;
       }
     }
@@ -69,15 +88,19 @@ class _CourseReportPageState extends State<CourseReportPage> {
     for (final key in abox.keys) {
       final data = abox.get(key);
       if (data is Map && data['courseId'] == widget.course.id) {
-        activities.add(ActivityModel(
-          id: data['id'],
-          courseId: data['courseId'],
-          categoryId: data['categoryId'],
-          name: data['name'],
-          description: data['description'] ?? '',
-          dueDate: data['dueDate'] != null ? DateTime.tryParse(data['dueDate']) : null,
-          visible: data['visible'] as bool? ?? true,
-        ));
+        activities.add(
+          ActivityModel(
+            id: data['id'],
+            courseId: data['courseId'],
+            categoryId: data['categoryId'],
+            name: data['name'],
+            description: data['description'] ?? '',
+            dueDate: data['dueDate'] != null
+                ? DateTime.tryParse(data['dueDate'])
+                : null,
+            visible: data['visible'] as bool? ?? true,
+          ),
+        );
       }
     }
     // Load assessment per activity
@@ -102,7 +125,8 @@ class _CourseReportPageState extends State<CourseReportPage> {
       }
     }
     // Compute grades matrix: rows=students, cols=activities
-    final Map<String, Map<String, double?>> grades = {}; // studentId -> (activityId -> grade or null)
+    final Map<String, Map<String, double?>> grades =
+        {}; // studentId -> (activityId -> grade or null)
     for (final sid in studentIds) {
       final row = <String, double?>{};
       for (final act in activities) {
@@ -120,6 +144,7 @@ class _CourseReportPageState extends State<CourseReportPage> {
           final sum = evals.fold<num>(0, (p, e) => p + sel(e));
           return sum / evals.length;
         }
+
         final p = avg((e) => e.punctuality);
         final c = avg((e) => e.contributions);
         final cm = avg((e) => e.commitment);
@@ -128,13 +153,17 @@ class _CourseReportPageState extends State<CourseReportPage> {
       }
       grades[sid] = row;
     }
-    return _ReportData(studentIds: studentIds, activities: activities, grades: grades);
+    return _ReportData(
+      studentIds: studentIds,
+      activities: activities,
+      grades: grades,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Reporte • ${widget.course.name}')),
+      appBar: AppTopBar(title: 'Reporte • ${widget.course.name}'),
       body: Padding(
         padding: const EdgeInsets.all(12.0),
         child: FutureBuilder<_ReportData>(
@@ -144,7 +173,9 @@ class _CourseReportPageState extends State<CourseReportPage> {
               return const Center(child: CircularProgressIndicator());
             }
             final data = snapshot.data;
-            if (data == null || data.activities.isEmpty || data.studentIds.isEmpty) {
+            if (data == null ||
+                data.activities.isEmpty ||
+                data.studentIds.isEmpty) {
               return const Center(child: Text('No hay datos para mostrar'));
             }
 
@@ -161,28 +192,56 @@ class _CourseReportPageState extends State<CourseReportPage> {
               final rowGrades = data.grades[sid]!;
               // Student average over non-null grades
               final vals = rowGrades.values.whereType<double>().toList();
-              final studentAvg = vals.isEmpty ? null : (vals.reduce((x, y) => x + y) / vals.length);
-              rows.add(DataRow(cells: [
-                DataCell(_StudentNameCell(userId: sid, authLocal: _authLocal)),
-                ...data.activities.map((a) {
-                  final g = rowGrades[a.id];
-                  return DataCell(Text(g == null ? '--' : g.toStringAsFixed(1)));
-                }),
-                DataCell(Text(studentAvg == null ? '--' : studentAvg.toStringAsFixed(1), style: const TextStyle(fontWeight: FontWeight.w600))),
-              ]));
+              final studentAvg = vals.isEmpty
+                  ? null
+                  : (vals.reduce((x, y) => x + y) / vals.length);
+              rows.add(
+                DataRow(
+                  cells: [
+                    DataCell(
+                      _StudentNameCell(userId: sid, authLocal: _authLocal),
+                    ),
+                    ...data.activities.map((a) {
+                      final g = rowGrades[a.id];
+                      return DataCell(
+                        Text(g == null ? '--' : g.toStringAsFixed(1)),
+                      );
+                    }),
+                    DataCell(
+                      Text(
+                        studentAvg == null
+                            ? '--'
+                            : studentAvg.toStringAsFixed(1),
+                        style: const TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                  ],
+                ),
+              );
             }
 
             // Activity averages row
             final avgRowCells = <DataCell>[];
-            avgRowCells.add(const DataCell(Text('Promedios', style: TextStyle(fontWeight: FontWeight.w700))));
+            avgRowCells.add(
+              const DataCell(
+                Text(
+                  'Promedios',
+                  style: TextStyle(fontWeight: FontWeight.w700),
+                ),
+              ),
+            );
             for (final act in data.activities) {
               final vals = <double>[];
               for (final sid in data.studentIds) {
                 final v = data.grades[sid]![act.id];
                 if (v != null) vals.add(v);
               }
-              final avg = vals.isEmpty ? null : (vals.reduce((x, y) => x + y) / vals.length);
-              avgRowCells.add(DataCell(Text(avg == null ? '--' : avg.toStringAsFixed(1))));
+              final avg = vals.isEmpty
+                  ? null
+                  : (vals.reduce((x, y) => x + y) / vals.length);
+              avgRowCells.add(
+                DataCell(Text(avg == null ? '--' : avg.toStringAsFixed(1))),
+              );
             }
             avgRowCells.add(const DataCell(Text('—'))); // empty for last column
 
@@ -193,7 +252,9 @@ class _CourseReportPageState extends State<CourseReportPage> {
                 controller: _hScroll,
                 scrollDirection: Axis.horizontal,
                 child: ConstrainedBox(
-                  constraints: BoxConstraints(minWidth: 240 + data.activities.length * 120),
+                  constraints: BoxConstraints(
+                    minWidth: 240 + data.activities.length * 120,
+                  ),
                   child: DataTable(
                     columnSpacing: 12,
                     columns: columns,
@@ -216,7 +277,11 @@ class _ReportData {
   final List<String> studentIds;
   final List<ActivityModel> activities;
   final Map<String, Map<String, double?>> grades;
-  _ReportData({required this.studentIds, required this.activities, required this.grades});
+  _ReportData({
+    required this.studentIds,
+    required this.activities,
+    required this.grades,
+  });
 }
 
 class _StudentNameCell extends StatelessWidget {

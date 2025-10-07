@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../../../../core/ui/widgets/app_top_bar.dart';
+import '../../../../core/ui/widgets/list_button_card.dart';
 import '../../../auth/ui/controllers/auth_controller.dart';
 import '../../../courses/ui/controllers/course_controller.dart';
 import '../../../courses/domain/models/course_model.dart';
@@ -9,7 +11,8 @@ class TeacherCoursesReportPage extends StatefulWidget {
   const TeacherCoursesReportPage({super.key});
 
   @override
-  State<TeacherCoursesReportPage> createState() => _TeacherCoursesReportPageState();
+  State<TeacherCoursesReportPage> createState() =>
+      _TeacherCoursesReportPageState();
 }
 
 class _TeacherCoursesReportPageState extends State<TeacherCoursesReportPage> {
@@ -42,28 +45,28 @@ class _TeacherCoursesReportPageState extends State<TeacherCoursesReportPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Reporte de mis cursos')),
+      appBar: const AppTopBar(title: 'Reporte de mis cursos'),
       body: Obx(() {
         final loading = _courseCtrl.loading.value;
         final courses = _courseCtrl.courses;
         if (loading) return const Center(child: CircularProgressIndicator());
-        if (courses.isEmpty) return const Center(child: Text('No tienes cursos creados'));
+        if (courses.isEmpty)
+          return const Center(child: Text('No tienes cursos creados'));
         return ListView.separated(
           padding: const EdgeInsets.all(16),
           itemCount: courses.length,
           separatorBuilder: (_, __) => const SizedBox(height: 12),
           itemBuilder: (context, index) {
             final c = courses[index];
-            return Card(
-              child: ListTile(
-                title: Text(c.name),
-                subtitle: Text(c.description, maxLines: 2, overflow: TextOverflow.ellipsis),
-                trailing: OutlinedButton.icon(
-                  onPressed: () => _openCourseReport(c),
-                  icon: const Icon(Icons.table_view_outlined),
-                  label: const Text('Ver notas'),
-                ),
-              ),
+            return ListButtonCard(
+              leadingIcon: Icons.menu_book_outlined,
+              title: c.name,
+              subtitle: c.description,
+              trailingChip: 'Ver notas',
+              containerColor: Theme.of(
+                context,
+              ).colorScheme.secondaryContainer.withValues(alpha: 0.75),
+              onTap: () => _openCourseReport(c),
             );
           },
         );
