@@ -39,6 +39,7 @@ import '../../../assessments/data/datasources/assessment_local_datasource.dart';
 import '../../../assessments/data/repositories/assessment_repository_impl.dart';
 import '../../../assessments/domain/repositories/assessment_repository.dart';
 import '../../../assessments/domain/use_cases/create_assessment_use_case.dart';
+import '../../data/datasources/user_remote_roble_datasource.dart';
 import '../../../assessments/domain/use_cases/get_assessment_by_activity_use_case.dart';
 import '../../../assessments/domain/use_cases/update_assessment_use_case.dart';
 import '../../../assessments/domain/use_cases/delete_assessment_by_activity_use_case.dart';
@@ -75,6 +76,7 @@ class AuthBinding extends Bindings {
     // Datasources (Hive-backed now; keep InMemory for tests if needed)
     Get.lazyPut<AuthLocalDataSource>(() => HiveAuthLocalDataSource(), fenix: true);
   Get.lazyPut<AuthRemoteDataSource>(() => RobleAuthRemoteDataSource(projectId: 'movil_993b654d20', debugLogging: true), fenix: true);
+  Get.lazyPut<UserRemoteDataSource>(() => RobleUserRemoteDataSource(projectId: 'movil_993b654d20', debugLogging: true), fenix: true);
 
     // Repository (bind to interface type so Get.find<AuthRepository>() works)
     Get.lazyPut<AuthRepository>(() => AuthRepositoryImpl(local: Get.find(), remote: Get.find()), fenix: true);

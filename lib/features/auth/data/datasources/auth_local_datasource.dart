@@ -22,7 +22,12 @@ class InMemoryAuthLocalDataSource implements AuthLocalDataSource {
   Future<UserModel?> fetchUserByEmail(String email) async => _users[email];
 
   @override
-  Future<UserModel?> fetchUserById(String id) async => _usersById[id];
+  Future<UserModel?> fetchUserById(String id) async {
+    // Log name request for debugging / telemetry
+    // ignore: avoid_print
+    print('[NameRequest] Local.InMemory fetchUserById: $id');
+    return _usersById[id];
+  }
 
   @override
   Future<UserModel> saveUser(UserModel user) async {
@@ -73,6 +78,9 @@ class HiveAuthLocalDataSource implements AuthLocalDataSource {
 
   @override
   Future<UserModel?> fetchUserById(String id) async {
+    // Log name request for debugging / telemetry
+    // ignore: avoid_print
+    print('[NameRequest] Local.Hive fetchUserById: $id');
     final data = _usersBox.get(id);
     if (data is Map) return _mapToUser(data);
     return null;

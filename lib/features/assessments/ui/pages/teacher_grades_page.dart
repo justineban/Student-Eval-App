@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../../core/ui/widgets/app_top_bar.dart';
-import '../../../auth/data/datasources/auth_local_datasource.dart';
-import '../../../auth/domain/models/user_model.dart';
+import '../../../auth/data/datasources/user_remote_roble_datasource.dart';
 import '../../../courses/ui/controllers/group_controller.dart';
 import '../../domain/models/activity_model.dart';
 import '../../domain/models/assessment_model.dart';
@@ -29,8 +28,8 @@ class TeacherGradesPage extends StatefulWidget {
 class _TeacherGradesPageState extends State<TeacherGradesPage> {
   late final CourseGroupController _groupCtrl;
   late final GetReceivedPeerEvaluationsUseCase _getUseCase;
-  late final AuthLocalDataSource _authLocal;
   final ScrollController _hScrollCtrl = ScrollController();
+  final Map<String, String?> _nameCache = {};
 
   Future<List<_StudentAverages>>? _future;
 
@@ -72,8 +71,24 @@ class _TeacherGradesPageState extends State<TeacherGradesPage> {
       );
     }
     _getUseCase = Get.find<GetReceivedPeerEvaluationsUseCase>();
-    _authLocal = Get.find<AuthLocalDataSource>();
-    _future = _computeAverages();
+    _future = _computeAveragesAndPrefetch();
+  }
+
+  Future<List<_StudentAverages>> _computeAveragesAndPrefetch() async {
+    final rows = await _computeAverages();
+    final ids = rows.map((r) => r.userId).toSet().toList();
+    final api = Get.find<UserRemoteDataSource>();
+    await Future.wait(ids.map((id) async {
+      try {
+        _nameCache[id] = await api.fetchNameByUserId(id);
+      } catch (_) {
+        _nameCache[id] = null;
+      }
+    }));
+    for (final r in rows) {
+      r.displayName = _nameCache[r.userId];
+    }
+    return rows;
   }
 
   Future<List<_StudentAverages>> _computeAverages() async {
@@ -193,7 +208,6 @@ class _TeacherGradesPageState extends State<TeacherGradesPage> {
                                         width: 220,
                                         child: _StudentName(
                                           userId: r.userId,
-                                          authLocal: _authLocal,
                                         ),
                                       ),
                                     ),
@@ -249,17 +263,12 @@ class _StudentAverages {
 
 class _StudentName extends StatelessWidget {
   final String userId;
-  final AuthLocalDataSource authLocal;
-  const _StudentName({required this.userId, required this.authLocal});
+  const _StudentName({required this.userId});
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<UserModel?>(
-      future: authLocal.fetchUserById(userId),
-      builder: (context, snapshot) {
-        final name = snapshot.data?.name;
-        final text = (name == null || name.trim().isEmpty) ? userId : name;
-        return Text(text);
-      },
-    );
+    final parent = context.findAncestorStateOfType<_TeacherGradesPageState>();
+    final name = parent?._nameCache[userId];
+    final text = (name == null || name.trim().isEmpty) ? userId : name;
+    return Text(text);
   }
 }

@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../../core/ui/widgets/app_top_bar.dart';
 import '../../../auth/ui/controllers/auth_controller.dart';
-import '../../../auth/data/datasources/auth_local_datasource.dart';
-import '../../../auth/domain/models/user_model.dart';
+import '../../../auth/data/datasources/user_remote_roble_datasource.dart';
 import '../../domain/models/activity_model.dart';
 import '../../domain/models/assessment_model.dart';
 import '../../domain/models/peer_evaluation_model.dart';
@@ -30,7 +29,8 @@ class ReceivedEvaluationsPage extends StatefulWidget {
 class _ReceivedEvaluationsPageState extends State<ReceivedEvaluationsPage> {
   late final AuthController _auth;
   late final GetReceivedPeerEvaluationsUseCase _getUseCase;
-  late final AuthLocalDataSource _authLocal;
+  // no local auth datasource needed for name display
+  final Map<String, String?> _nameCache = {};
   final ScrollController _hScrollCtrl = ScrollController();
 
   Future<List<PeerEvaluationModel>>? _future;
@@ -73,12 +73,30 @@ class _ReceivedEvaluationsPageState extends State<ReceivedEvaluationsPage> {
       );
     }
     _getUseCase = Get.find<GetReceivedPeerEvaluationsUseCase>();
-    _authLocal = Get.find<AuthLocalDataSource>();
+    // prefetch evaluator names before rendering
     final userId = _auth.currentUser.value?.id ?? '';
+    _prefetchEvaluatorNames(userId).then((_) {
+      setState(() {});
+    });
     _future = _getUseCase(
       assessmentId: widget.assessment.id,
       evaluateeId: userId,
     );
+  }
+
+  Future<void> _prefetchEvaluatorNames(String evaluateeId) async {
+    try {
+      final list = await _getUseCase(assessmentId: widget.assessment.id, evaluateeId: evaluateeId);
+      final ids = list.map((e) => e.evaluatorId).toSet().toList();
+      final api = Get.find<UserRemoteDataSource>();
+      await Future.wait(ids.map((id) async {
+        try {
+          _nameCache[id] = await api.fetchNameByUserId(id);
+        } catch (_) {
+          _nameCache[id] = null;
+        }
+      }));
+    } catch (_) {}
   }
 
   @override
@@ -147,7 +165,6 @@ class _ReceivedEvaluationsPageState extends State<ReceivedEvaluationsPage> {
                                       width: 180,
                                       child: _EvaluatorName(
                                         userId: e.evaluatorId,
-                                        authLocal: _authLocal,
                                       ),
                                     ),
                                   ),
@@ -208,19 +225,14 @@ class _EmptyReceived extends StatelessWidget {
 
 class _EvaluatorName extends StatelessWidget {
   final String userId;
-  final AuthLocalDataSource authLocal;
-  const _EvaluatorName({required this.userId, required this.authLocal});
+  const _EvaluatorName({required this.userId});
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<UserModel?>(
-      future: authLocal.fetchUserById(userId),
-      builder: (context, snapshot) {
-        final name = snapshot.data?.name;
-        return Text(
-          name == null || name.trim().isEmpty ? userId : name,
-          style: const TextStyle(fontWeight: FontWeight.w600),
-        );
-      },
+    final parent = context.findAncestorStateOfType<_ReceivedEvaluationsPageState>();
+    final name = parent?._nameCache[userId];
+    return Text(
+      name == null || name.trim().isEmpty ? userId : name,
+      style: const TextStyle(fontWeight: FontWeight.w600),
     );
   }
 }

@@ -4,7 +4,7 @@ import '../../../../core/ui/widgets/app_top_bar.dart';
 import 'package:hive/hive.dart';
 import '../../../../core/storage/hive_boxes.dart';
 import '../../../auth/ui/controllers/auth_controller.dart';
-import '../../../auth/data/datasources/auth_local_datasource.dart';
+import '../../../auth/data/datasources/user_remote_roble_datasource.dart';
 import '../../../courses/ui/controllers/student_courses_controller.dart';
 import '../../../courses/domain/models/course_model.dart';
 
@@ -18,7 +18,7 @@ class MyGroupsPage extends StatefulWidget {
 class _MyGroupsPageState extends State<MyGroupsPage> {
   late final AuthController _auth;
   late final StudentCoursesController _studentCtrl;
-  late final AuthLocalDataSource _authLocal;
+  // no local auth datasource needed for name lookups
 
   final _expanded = <String>{}.obs; // courseId set
   final _loadingCourseGroups = <String>{}.obs; // courseIds loading
@@ -29,7 +29,7 @@ class _MyGroupsPageState extends State<MyGroupsPage> {
   void initState() {
     super.initState();
     _auth = Get.find<AuthController>();
-    _authLocal = Get.find<AuthLocalDataSource>();
+  // _authLocal = Get.find<AuthLocalDataSource>();
     // Defensive DI for StudentCoursesController in case not registered yet
     if (!Get.isRegistered<StudentCoursesController>()) {
       Get.lazyPut<StudentCoursesController>(
@@ -266,8 +266,7 @@ class _MyGroupsPageState extends State<MyGroupsPage> {
     final List<String> out = [];
     for (final id in ids) {
       try {
-        final u = await _authLocal.fetchUserById(id);
-        final name = u?.name;
+        final name = await Get.find<UserRemoteDataSource>().fetchNameByUserId(id);
         out.add((name == null || name.trim().isEmpty) ? id : name);
       } catch (_) {
         out.add(id);

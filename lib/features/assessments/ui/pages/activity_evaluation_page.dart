@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../../core/ui/widgets/app_top_bar.dart';
 import '../../../auth/ui/controllers/auth_controller.dart';
-import '../../../auth/data/datasources/auth_local_datasource.dart';
+import '../../../auth/data/datasources/user_remote_roble_datasource.dart';
 import '../../../courses/ui/controllers/group_controller.dart';
 import '../../domain/models/activity_model.dart';
 import '../../domain/models/assessment_model.dart';
@@ -12,7 +12,7 @@ import '../../data/datasources/peer_evaluation_local_datasource.dart';
 import '../../data/datasources/peer_evaluation_remote_roble_datasource.dart';
 import '../../data/repositories/peer_evaluation_repository_impl.dart';
 import '../../domain/repositories/peer_evaluation_repository.dart';
-import '../../../auth/domain/models/user_model.dart';
+// auth user model not required here
 
 class ActivityEvaluationPage extends StatefulWidget {
   final ActivityModel activity;
@@ -35,6 +35,7 @@ class _ActivityEvaluationPageState extends State<ActivityEvaluationPage> {
 
   final _ratings = <String, PeerEvaluationModel>{}.obs; // key by evaluateeId
   bool _saving = false;
+  final Map<String, String?> _nameCache = {};
 
   @override
   void initState() {
@@ -73,8 +74,31 @@ class _ActivityEvaluationPageState extends State<ActivityEvaluationPage> {
       );
     }
     _saveUseCase = Get.find<SavePeerEvaluationsUseCase>();
-    // Ensure groups loaded for category
-    _groupCtrl.load(widget.activity.categoryId);
+    // Ensure groups loaded for category and prefetch member names
+    _loadGroupsAndPrefetchNames();
+  }
+
+  void _loadGroupsAndPrefetchNames() async {
+    await _groupCtrl.load(widget.activity.categoryId);
+    final userId = _auth.currentUser.value?.id ?? '';
+    final myGroup = _groupCtrl.groups.firstWhereOrNull((g) => g.memberIds.contains(userId));
+    if (myGroup == null) return;
+    final peers = myGroup.memberIds.where((m) => m != userId).toList();
+    await _prefetchNames(peers);
+    if (mounted) setState(() {});
+  }
+
+  Future<void> _prefetchNames(List<String> ids) async {
+    final api = Get.find<UserRemoteDataSource>();
+    final futures = ids.map((id) async {
+      try {
+        final n = await api.fetchNameByUserId(id);
+        _nameCache[id] = n;
+      } catch (_) {
+        _nameCache[id] = null;
+      }
+    });
+    await Future.wait(futures);
   }
 
   @override
@@ -152,7 +176,7 @@ class _ActivityEvaluationPageState extends State<ActivityEvaluationPage> {
                                   constraints: const BoxConstraints(
                                     minWidth: 180,
                                   ),
-                                  child: _MemberName(userId: pid),
+                                  child: _MemberName(userId: pid, nameCache: _nameCache),
                                 ),
                               ),
                               DataCell(
@@ -241,21 +265,12 @@ class _ActivityEvaluationPageState extends State<ActivityEvaluationPage> {
 
 class _MemberName extends StatelessWidget {
   final String userId;
-  const _MemberName({required this.userId});
+  final Map<String, String?> nameCache;
+  const _MemberName({required this.userId, required this.nameCache});
   @override
   Widget build(BuildContext context) {
-    final authLocal = Get.find<AuthLocalDataSource>();
-    return FutureBuilder<UserModel?>(
-      future: authLocal.fetchUserById(userId),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Text('…');
-        }
-        final user = snapshot.data;
-        final name = user?.name;
-        return Text((name != null && name.trim().isNotEmpty) ? name : userId);
-      },
-    );
+    final name = nameCache[userId];
+    return Text((name != null && name.trim().isNotEmpty) ? name : userId);
   }
 }
 

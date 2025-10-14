@@ -3,7 +3,7 @@ import 'package:get/get.dart';
 import '../../../../core/ui/widgets/app_top_bar.dart';
 import '../controllers/group_controller.dart';
 import '../controllers/course_controller.dart';
-import '../../../auth/data/datasources/auth_local_datasource.dart';
+import '../../../auth/data/datasources/user_remote_roble_datasource.dart';
 import '../../../auth/ui/controllers/auth_controller.dart';
 import '../../domain/models/group_model.dart';
 
@@ -78,7 +78,7 @@ class _CourseGroupListPageState extends State<CourseGroupListPage> {
       return;
     }
     String? selected = available.first;
-    final authLocal = HiveAuthLocalDataSource();
+  // final authLocal = HiveAuthLocalDataSource();
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
@@ -90,10 +90,10 @@ class _CourseGroupListPageState extends State<CourseGroupListPage> {
               for (final id in available)
                 DropdownMenuItem(
                   value: id,
-                  child: FutureBuilder(
-                    future: authLocal.fetchUserById(id),
+                  child: FutureBuilder<String?>(
+                    future: Get.find<UserRemoteDataSource>().fetchNameByUserId(id),
                     builder: (context, snapshot) {
-                      final name = snapshot.data?.name ?? id;
+                      final name = snapshot.data ?? id;
                       return Text(name);
                     },
                   ),
@@ -306,15 +306,10 @@ class _CourseGroupListPageState extends State<CourseGroupListPage> {
                                       itemCount: g.memberIds.length,
                                       itemBuilder: (_, j) {
                                         final member = g.memberIds[j];
-                                        final authLocal =
-                                            HiveAuthLocalDataSource();
-                                        return FutureBuilder(
-                                          future: authLocal.fetchUserById(
-                                            member,
-                                          ),
+                    return FutureBuilder<String?>(
+                                          future: Get.find<UserRemoteDataSource>().fetchNameByUserId(member),
                                           builder: (context, snapshot) {
-                                            final display =
-                                                snapshot.data?.name ?? member;
+                                            final display = snapshot.data ?? member;
                                             return ListTile(
                                               dense: true,
                                               leading: const Icon(

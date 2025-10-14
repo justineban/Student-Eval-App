@@ -5,7 +5,7 @@ import '../../domain/models/course_model.dart';
 import '../../../auth/ui/controllers/auth_controller.dart';
 import '../../ui/controllers/course_controller.dart';
 import '../../../assessments/ui/pages/activity_list_page.dart';
-import '../../../auth/data/datasources/auth_local_datasource.dart';
+import '../../../auth/data/datasources/user_remote_roble_datasource.dart';
 import 'category_list_page.dart';
 
 class CourseDetailPage extends StatefulWidget {
@@ -21,12 +21,39 @@ class _CourseDetailPageState extends State<CourseDetailPage> {
   late final CourseController _courses;
   final _inviteEmailCtrl = TextEditingController();
   final _formKey = GlobalKey<FormState>();
+  final Map<String, String?> _nameCache = {};
+  late final Future<void> _prefetchFuture;
 
   @override
   void initState() {
     super.initState();
     _auth = Get.find<AuthController>();
     _courses = Get.find<CourseController>();
+    // prefetch teacher and student names
+    _prefetchFuture = _prefetchNames();
+  }
+
+  Future<void> _prefetchNames() async {
+    try {
+      final course = _currentCourseSnapshot();
+      final api = Get.find<UserRemoteDataSource>();
+      // teacher
+      try {
+        _nameCache[course.teacherId] = await api.fetchNameByUserId(course.teacherId);
+      } catch (_) {
+        _nameCache[course.teacherId] = null;
+      }
+      // students
+      final futures = course.studentIds.map((id) async {
+        try {
+          _nameCache[id] = await api.fetchNameByUserId(id);
+        } catch (_) {
+          _nameCache[id] = null;
+        }
+      }).toList();
+      await Future.wait(futures);
+      if (mounted) setState(() {});
+    } catch (_) {}
   }
 
   @override
@@ -36,7 +63,7 @@ class _CourseDetailPageState extends State<CourseDetailPage> {
   }
 
   bool get _isTeacher => _auth.currentUser.value?.id == widget.course.teacherId;
-  final _authLocal = HiveAuthLocalDataSource();
+  // use remote user API for name lookups
 
   CourseModel _currentCourseSnapshot() {
     // Buscar versión reactiva actualizada en la lista, si existe
@@ -247,17 +274,13 @@ class _CourseDetailPageState extends State<CourseDetailPage> {
                     const SizedBox(height: 8),
                     Text(course.description),
                     const SizedBox(height: 12),
-                    FutureBuilder(
-                      future: _authLocal.fetchUserById(course.teacherId),
-                      builder: (context, snapshot) {
-                        final name = snapshot.data?.name ?? 'Docente';
-                        return Text(
-                          'Docente: $name',
-                          style: const TextStyle(color: Colors.grey),
-                        );
-                      },
-                    ),
-                    const SizedBox(height: 8),
+                    Builder(builder: (context) {
+                      final name = _nameCache[course.teacherId] ?? 'Docente';
+                      return Text(
+                        'Docente: $name',
+                        style: const TextStyle(color: Colors.grey),
+                      );
+                    }),
                     Row(
                       children: [
                         if (_isTeacher)
@@ -298,37 +321,39 @@ class _CourseDetailPageState extends State<CourseDetailPage> {
                         minHeight: 120,
                         maxHeight: 260,
                       ),
-                      child: course.studentIds.isEmpty
-                          ? const Center(child: Text('Sin estudiantes todavía'))
-                          : ListView.builder(
-                              shrinkWrap: true,
-                              itemCount: course.studentIds.length,
-                              itemBuilder: (_, i) {
-                                final studentId = course.studentIds[i];
-                                return FutureBuilder(
-                                  future: _authLocal.fetchUserById(studentId),
-                                  builder: (context, snapshot) {
-                                    final isMe =
-                                        _auth.currentUser.value?.id ==
-                                        studentId;
-                                    final displayName =
-                                        snapshot.data?.name ?? 'Estudiante';
+                      child: FutureBuilder<void>(
+                        future: _prefetchFuture,
+                        builder: (_, snap) {
+                          if (snap.connectionState != ConnectionState.done) {
+                            // Wait for names to be prefetched so the list can show real names
+                            return const Center(
+                              child: SizedBox(
+                                width: 36,
+                                height: 36,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              ),
+                            );
+                          }
+                          // Prefetch finished — render list using cached names
+                          return course.studentIds.isEmpty
+                              ? const Center(child: Text('Sin estudiantes todavía'))
+                              : ListView.builder(
+                                  shrinkWrap: true,
+                                  itemCount: course.studentIds.length,
+                                  itemBuilder: (_, i) {
+                                    final studentId = course.studentIds[i];
+                                    final isMe = _auth.currentUser.value?.id == studentId;
+                                    final displayName = _nameCache[studentId] ?? 'Estudiante';
                                     return ListTile(
                                       dense: true,
                                       leading: const Icon(Icons.person_outline),
-                                      title: Text(
-                                        isMe
-                                            ? '$displayName (tú)'
-                                            : displayName,
-                                      ),
-                                      subtitle: snapshot.hasData
-                                          ? Text(snapshot.data!.email)
-                                          : null,
+                                      title: Text(isMe ? '$displayName (tú)' : displayName),
+                                      subtitle: null,
                                     );
                                   },
                                 );
-                              },
-                            ),
+                        },
+                      ),
                     ),
                     const SizedBox(height: 24),
                   ],
@@ -366,19 +391,17 @@ class _CourseDetailPageState extends State<CourseDetailPage> {
                             label: const Text('Ver actividades'),
                           ),
                         ),
-                        if (_isTeacher) ...[
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: OutlinedButton.icon(
-                              onPressed: () => Get.to(
-                                () => const CategoryListPage(),
-                                arguments: {'courseId': course.id},
-                              ),
-                              icon: const Icon(Icons.category_outlined),
-                              label: const Text('Ver categorías'),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: () => Get.to(
+                              () => const CategoryListPage(),
+                              arguments: {'courseId': course.id},
                             ),
+                            icon: const Icon(Icons.category_outlined),
+                            label: const Text('Ver categorías'),
                           ),
-                        ],
+                        ),
                       ],
                     ),
                     if (_isTeacher) ...[

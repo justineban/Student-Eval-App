@@ -1,7 +1,9 @@
 import '../../domain/models/user_model.dart';
+import 'package:get/get.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../datasources/auth_local_datasource.dart';
 import '../datasources/auth_remote_datasource.dart';
+import '../datasources/user_remote_roble_datasource.dart';
 
 /// Repository implementation choosing local first (in-memory) and stubbing remote.
 class AuthRepositoryImpl implements AuthRepository {
@@ -78,6 +80,17 @@ class AuthRepositoryImpl implements AuthRepository {
     if (local is HiveAuthLocalDataSource) {
       final hive = (local as HiveAuthLocalDataSource);
       await hive.persistTokenPair(session.accessToken, session.refreshToken);
+      // Try to create UserModel remote row now that tokens are persisted
+      try {
+        if (Get.isRegistered<UserRemoteDataSource>()) {
+          final userRemote = Get.find<UserRemoteDataSource>();
+          await userRemote.insertUser(userId: effectiveUser.id, name: effectiveUser.name);
+        }
+      } catch (e) {
+        // non-fatal, log and continue
+        // ignore: avoid_print
+        print('[AuthRepository] failed to create remote UserModel: $e');
+      }
     }
     return effectiveUser;
   }

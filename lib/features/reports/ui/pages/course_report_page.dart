@@ -12,8 +12,7 @@ import '../../../assessments/data/datasources/peer_evaluation_local_datasource.d
 import '../../../assessments/data/datasources/peer_evaluation_remote_roble_datasource.dart';
 import '../../../assessments/data/repositories/peer_evaluation_repository_impl.dart';
 import '../../../assessments/domain/repositories/peer_evaluation_repository.dart';
-import '../../../auth/data/datasources/auth_local_datasource.dart';
-import '../../../auth/domain/models/user_model.dart';
+import '../../../auth/data/datasources/user_remote_roble_datasource.dart';
 
 class CourseReportPage extends StatefulWidget {
   final CourseModel course;
@@ -25,7 +24,8 @@ class CourseReportPage extends StatefulWidget {
 
 class _CourseReportPageState extends State<CourseReportPage> {
   late final GetReceivedPeerEvaluationsUseCase _getUseCase;
-  late final AuthLocalDataSource _authLocal;
+  // use remote user API for name lookups
+  final Map<String, String?> _nameCache = {};
 
   Future<_ReportData>? _future;
   final ScrollController _hScroll = ScrollController();
@@ -66,8 +66,18 @@ class _CourseReportPageState extends State<CourseReportPage> {
       );
     }
     _getUseCase = Get.find<GetReceivedPeerEvaluationsUseCase>();
-    _authLocal = Get.find<AuthLocalDataSource>();
     _future = _buildReport();
+    _future!.then((data) async {
+      final api = Get.find<UserRemoteDataSource>();
+      await Future.wait(data.studentIds.map((id) async {
+        try {
+          _nameCache[id] = await api.fetchNameByUserId(id);
+        } catch (_) {
+          _nameCache[id] = null;
+        }
+      }));
+      if (mounted) setState(() {});
+    });
   }
 
   Future<_ReportData> _buildReport() async {
@@ -199,7 +209,7 @@ class _CourseReportPageState extends State<CourseReportPage> {
                 DataRow(
                   cells: [
                     DataCell(
-                      _StudentNameCell(userId: sid, authLocal: _authLocal),
+                      _StudentNameCell(userId: sid),
                     ),
                     ...data.activities.map((a) {
                       final g = rowGrades[a.id];
@@ -286,16 +296,11 @@ class _ReportData {
 
 class _StudentNameCell extends StatelessWidget {
   final String userId;
-  final AuthLocalDataSource authLocal;
-  const _StudentNameCell({required this.userId, required this.authLocal});
+  const _StudentNameCell({required this.userId});
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<UserModel?>(
-      future: authLocal.fetchUserById(userId),
-      builder: (context, snapshot) {
-        final name = snapshot.data?.name;
-        return Text(name == null || name.trim().isEmpty ? userId : name);
-      },
-    );
+    final parent = context.findAncestorStateOfType<_CourseReportPageState>();
+    final name = parent?._nameCache[userId];
+    return Text(name == null || name.trim().isEmpty ? userId : name);
   }
 }

@@ -4,6 +4,7 @@ import '../../domain/use_cases/login_use_case.dart';
 import '../../domain/use_cases/register_use_case.dart';
 import '../../domain/use_cases/logout_use_case.dart';
 import '../../domain/use_cases/restore_session_use_case.dart';
+import '../../data/datasources/user_remote_roble_datasource.dart';
 
 /// Controller (presentation layer) to bridge UI events with use cases.
 class AuthController extends GetxController {
@@ -35,6 +36,16 @@ class AuthController extends GetxController {
       final restored = await restoreSessionUseCase();
       if (restored != null) {
         currentUser.value = restored;
+        // try to refresh name from remote UserModel table
+        try {
+          if (Get.isRegistered<UserRemoteDataSource>()) {
+            final name = await Get.find<UserRemoteDataSource>().fetchNameByUserId(restored.id);
+            if (name != null && name.trim().isNotEmpty) {
+              restored.name = name;
+              currentUser.value = restored;
+            }
+          }
+        } catch (_) {}
       }
     } finally {
       loading.value = false;
@@ -70,6 +81,15 @@ class AuthController extends GetxController {
         error.value = 'No se pudo registrar.';
       } else {
         currentUser.value = result;
+        try {
+          if (Get.isRegistered<UserRemoteDataSource>()) {
+            final name = await Get.find<UserRemoteDataSource>().fetchNameByUserId(result.id);
+            if (name != null && name.trim().isNotEmpty) {
+              result.name = name;
+              currentUser.value = result;
+            }
+          }
+        } catch (_) {}
       }
     } catch (e) {
       // Mostrar mensaje del backend si viene (AuthApiException.toString devuelve el mensaje)
