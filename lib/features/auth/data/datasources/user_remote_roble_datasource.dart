@@ -5,7 +5,11 @@ import 'auth_local_datasource.dart';
 
 abstract class UserRemoteDataSource {
   Future<String?> fetchNameByUserId(String userId);
-  Future<void> insertUser({required String userId, required String name});
+  /// Insert a user row into the remote UserModel table.
+  /// Optionally provide an [accessToken] to use for authorization. If not
+  /// provided the implementation may try to read a stored token from local
+  /// storage.
+  Future<void> insertUser({required String userId, required String name, String? accessToken});
 }
 
 class RobleUserRemoteDataSource implements UserRemoteDataSource {
@@ -87,8 +91,8 @@ class RobleUserRemoteDataSource implements UserRemoteDataSource {
   }
 
   @override
-  Future<void> insertUser({required String userId, required String name}) async {
-    final token = await _readAccessToken();
+  Future<void> insertUser({required String userId, required String name, String? accessToken}) async {
+    final token = accessToken ?? await _readAccessToken();
     if (token == null || token.isEmpty) {
       _log('SKIP', 'No token available to insert user row');
       return;
@@ -106,7 +110,11 @@ class RobleUserRemoteDataSource implements UserRemoteDataSource {
     final resp = await _client.post(Uri.parse(url), headers: _headers(token), body: jsonEncode(body));
     _log('RESP', '${resp.statusCode} ${resp.body}');
     if (resp.statusCode < 200 || resp.statusCode >= 300) {
+      _log('ERR', 'Failed to insert UserModel row: ${resp.statusCode} ${resp.body}');
       throw Exception('Failed to insert UserModel row: ${resp.statusCode} ${resp.body}');
     }
+    // Log success to terminal
+    // ignore: avoid_print
+    print('[UserModel] Inserted row for userId=$userId name=$name status=${resp.statusCode}');
   }
 }

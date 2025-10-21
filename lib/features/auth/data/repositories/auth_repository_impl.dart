@@ -73,18 +73,67 @@ class AuthRepositoryImpl implements AuthRepository {
   final session = await remote.register(name, email, password);
     if (session == null) return null; // non-2xx
   // For 201 con mensaje (sin tokens/usuario), _ensureUserFromSession creará usuario local con nombre/email
-  final effectiveUser = await _ensureUserFromSession(session, fallbackEmail: email, fallbackName: name);
+  var effectiveUser = await _ensureUserFromSession(session, fallbackEmail: email, fallbackName: name);
   _cached = effectiveUser;
   await local.saveUser(effectiveUser);
   await local.persistSessionUserId(effectiveUser.id);
+    // If signup returned tokens, persist them and try to insert the UserModel row
+    // immediately using that token. If signup didn't return a token (common for
+    // 201 Created responses), attempt an immediate login with the provided
+    // credentials to obtain a token and then insert.
     if (local is HiveAuthLocalDataSource) {
       final hive = (local as HiveAuthLocalDataSource);
-      await hive.persistTokenPair(session.accessToken, session.refreshToken);
-      // Try to create UserModel remote row now that tokens are persisted
+      // Prefer tokens returned by signup
+      String tokenToUse = session.accessToken;
+      String refreshToUse = session.refreshToken;
+      if (tokenToUse.isNotEmpty) {
+        await hive.persistTokenPair(tokenToUse, refreshToUse);
+      } else {
+        // Try immediate login to obtain tokens
+        try {
+          // ignore: avoid_print
+          print('[AuthRepository] signup returned no token, attempting immediate login to obtain token');
+          final loginSession = await remote.login(email, password);
+          if (loginSession != null && loginSession.accessToken.isNotEmpty) {
+            tokenToUse = loginSession.accessToken;
+            refreshToUse = loginSession.refreshToken;
+            // Update effectiveUser if login returned richer user info
+            if (loginSession.user != null) {
+              final richer = loginSession.user!;
+              // Build a new UserModel merging fields from richer and existing
+              final merged = UserModel(
+                id: richer.id.isNotEmpty ? richer.id : effectiveUser.id,
+                email: richer.email.isNotEmpty ? richer.email : effectiveUser.email,
+                password: effectiveUser.password,
+                name: richer.name.isNotEmpty ? richer.name : effectiveUser.name,
+              );
+              effectiveUser = merged;
+              _cached = effectiveUser;
+              await local.saveUser(effectiveUser);
+              await local.persistSessionUserId(effectiveUser.id);
+            }
+            await hive.persistTokenPair(tokenToUse, refreshToUse);
+            // ignore: avoid_print
+            print('[AuthRepository] immediate login succeeded, obtained token');
+          } else {
+            // ignore: avoid_print
+            print('[AuthRepository] immediate login did not return token');
+          }
+        } catch (e) {
+          // ignore: avoid_print
+          print('[AuthRepository] immediate login failed: $e');
+        }
+      }
+
+      // Try to create UserModel remote row now that we attempted to obtain tokens.
       try {
         if (Get.isRegistered<UserRemoteDataSource>()) {
           final userRemote = Get.find<UserRemoteDataSource>();
-          await userRemote.insertUser(userId: effectiveUser.id, name: effectiveUser.name);
+          // ignore: avoid_print
+          print('[AuthRepository] attempting to insert UserModel row for id=${effectiveUser.id} name=${effectiveUser.name}');
+          await userRemote.insertUser(userId: effectiveUser.id, name: effectiveUser.name, accessToken: tokenToUse);
+          // ignore: avoid_print
+          print('[AuthRepository] insertUser completed for id=${effectiveUser.id}');
         }
       } catch (e) {
         // non-fatal, log and continue
