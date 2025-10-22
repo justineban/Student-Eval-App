@@ -21,6 +21,7 @@ class _ActivityListPageState extends State<ActivityListPage> {
   late final ActivityController _activityController;
   late final CategoryController _categoryController;
   String? _courseId;
+  String? _categoryId;
   late final AuthController _auth;
   bool _isTeacher = false;
 
@@ -56,6 +57,8 @@ class _ActivityListPageState extends State<ActivityListPage> {
     final args = Get.arguments;
     if (args is Map && args['courseId'] is String) {
       _courseId = args['courseId'] as String;
+      if (args['categoryId'] is String)
+        _categoryId = args['categoryId'] as String;
     } else {
       final coursesController = Get.isRegistered<CourseController>()
           ? Get.find<CourseController>()
@@ -66,8 +69,18 @@ class _ActivityListPageState extends State<ActivityListPage> {
     }
     _auth = Get.find<AuthController>();
     if (_courseId != null) {
-      _activityController.load(_courseId!);
-      _categoryController.load(_courseId!);
+      try {
+        _activityController.load(_courseId!);
+      } catch (e, st) {
+        debugPrint('Error loading activities for course $_courseId: $e');
+        debugPrint('$st');
+      }
+      try {
+        _categoryController.load(_courseId!);
+      } catch (e, st) {
+        debugPrint('Error loading categories for course $_courseId: $e');
+        debugPrint('$st');
+      }
       _determineRole();
     }
   }
@@ -125,8 +138,15 @@ class _ActivityListPageState extends State<ActivityListPage> {
     final descCtrl = TextEditingController();
     final formKey = GlobalKey<FormState>();
     final visible = true.obs;
+    // If this ActivityListPage was opened for a specific category, fix the
+    // selected category to that id and disable changing it in the dialog.
     final selectedCategory = Rx<String?>(
-      _categoryController.categories.first.id,
+      (_categoryId != null &&
+              _categoryController.categories.any((c) => c.id == _categoryId))
+          ? _categoryId
+          : _categoryController.categories.isNotEmpty
+          ? _categoryController.categories.first.id
+          : null,
     );
     final dueDate = Rx<DateTime?>(null);
 
@@ -157,9 +177,13 @@ class _ActivityListPageState extends State<ActivityListPage> {
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 12),
-                Obx(
-                  () => DropdownButtonFormField<String>(
-                    initialValue: selectedCategory.value,
+                Obx(() {
+                  // If page was opened for a specific category, disable changing it.
+                  final fixed =
+                      _categoryId != null &&
+                      selectedCategory.value == _categoryId;
+                  return DropdownButtonFormField<String>(
+                    value: selectedCategory.value,
                     items: _categoryController.categories
                         .map(
                           (c) => DropdownMenuItem(
@@ -168,13 +192,13 @@ class _ActivityListPageState extends State<ActivityListPage> {
                           ),
                         )
                         .toList(),
-                    onChanged: (v) => selectedCategory.value = v,
+                    onChanged: fixed ? null : (v) => selectedCategory.value = v,
                     decoration: const InputDecoration(
                       labelText: 'Categoría',
                       border: OutlineInputBorder(),
                     ),
-                  ),
-                ),
+                  );
+                }),
                 const SizedBox(height: 12),
                 TextFormField(
                   controller: nameCtrl,
@@ -428,16 +452,27 @@ class _ActivityListPageState extends State<ActivityListPage> {
     return Scaffold(
       appBar: const AppTopBar(title: 'Actividades'),
       body: Obx(() {
-        if (_courseId == null)
+        if (_courseId == null) {
+          // Defensive: if courseId wasn't determined, show message instead of crashing
           return const Center(child: Text('No hay curso para actividades'));
+        }
+
+        // proceed normally when courseId exists
+
         if (_activityController.loading.value)
           return const Center(child: CircularProgressIndicator());
         // Filter for students: only visible activities
-        final items = _isTeacher
-            ? _activityController.activities
+        var items = _isTeacher
+            ? List.of(_activityController.activities)
             : _activityController.activities
                   .where((a) => a.visible)
                   .toList(growable: false);
+        // If a categoryId was provided, filter activities to that category
+        if (_categoryId != null) {
+          items = items
+              .where((a) => a.categoryId == _categoryId)
+              .toList(growable: false);
+        }
         if (items.isEmpty) {
           return const Center(child: Text('Aún no hay actividades'));
         }

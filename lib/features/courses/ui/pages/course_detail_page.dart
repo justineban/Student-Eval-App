@@ -4,7 +4,6 @@ import '../../../../core/ui/widgets/app_top_bar.dart';
 import '../../domain/models/course_model.dart';
 import '../../../auth/ui/controllers/auth_controller.dart';
 import '../../ui/controllers/course_controller.dart';
-import '../../../assessments/ui/pages/activity_list_page.dart';
 import '../../../auth/data/datasources/user_remote_roble_datasource.dart';
 import 'category_list_page.dart';
 
@@ -39,7 +38,9 @@ class _CourseDetailPageState extends State<CourseDetailPage> {
       final api = Get.find<UserRemoteDataSource>();
       // teacher
       try {
-        _nameCache[course.teacherId] = await api.fetchNameByUserId(course.teacherId);
+        _nameCache[course.teacherId] = await api.fetchNameByUserId(
+          course.teacherId,
+        );
       } catch (_) {
         _nameCache[course.teacherId] = null;
       }
@@ -274,13 +275,15 @@ class _CourseDetailPageState extends State<CourseDetailPage> {
                     const SizedBox(height: 8),
                     Text(course.description),
                     const SizedBox(height: 12),
-                    Builder(builder: (context) {
-                      final name = _nameCache[course.teacherId] ?? 'Docente';
-                      return Text(
-                        'Docente: $name',
-                        style: const TextStyle(color: Colors.grey),
-                      );
-                    }),
+                    Builder(
+                      builder: (context) {
+                        final name = _nameCache[course.teacherId] ?? 'Docente';
+                        return Text(
+                          'Docente: $name',
+                          style: const TextStyle(color: Colors.grey),
+                        );
+                      },
+                    ),
                     Row(
                       children: [
                         if (_isTeacher)
@@ -330,24 +333,35 @@ class _CourseDetailPageState extends State<CourseDetailPage> {
                               child: SizedBox(
                                 width: 36,
                                 height: 36,
-                                child: CircularProgressIndicator(strokeWidth: 2),
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
                               ),
                             );
                           }
                           // Prefetch finished — render list using cached names
                           return course.studentIds.isEmpty
-                              ? const Center(child: Text('Sin estudiantes todavía'))
+                              ? const Center(
+                                  child: Text('Sin estudiantes todavía'),
+                                )
                               : ListView.builder(
                                   shrinkWrap: true,
                                   itemCount: course.studentIds.length,
                                   itemBuilder: (_, i) {
                                     final studentId = course.studentIds[i];
-                                    final isMe = _auth.currentUser.value?.id == studentId;
-                                    final displayName = _nameCache[studentId] ?? 'Estudiante';
+                                    final isMe =
+                                        _auth.currentUser.value?.id ==
+                                        studentId;
+                                    final displayName =
+                                        _nameCache[studentId] ?? 'Estudiante';
                                     return ListTile(
                                       dense: true,
                                       leading: const Icon(Icons.person_outline),
-                                      title: Text(isMe ? '$displayName (tú)' : displayName),
+                                      title: Text(
+                                        isMe
+                                            ? '$displayName (tú)'
+                                            : displayName,
+                                      ),
                                       subtitle: null,
                                     );
                                   },
@@ -381,17 +395,6 @@ class _CourseDetailPageState extends State<CourseDetailPage> {
                   children: [
                     Row(
                       children: [
-                        Expanded(
-                          child: OutlinedButton.icon(
-                            onPressed: () => Get.to(
-                              () => const ActivityListPage(),
-                              arguments: {'courseId': course.id},
-                            ),
-                            icon: const Icon(Icons.task_outlined),
-                            label: const Text('Ver actividades'),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
                         Expanded(
                           child: OutlinedButton.icon(
                             onPressed: () => Get.to(

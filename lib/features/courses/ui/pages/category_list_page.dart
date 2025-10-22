@@ -4,6 +4,7 @@ import '../../../../core/ui/widgets/app_top_bar.dart';
 import '../../../../core/ui/widgets/list_button_card.dart';
 import '../../../assessments/ui/controllers/category_controller.dart';
 import '../../../assessments/domain/models/category_model.dart';
+import '../../../assessments/ui/pages/activity_list_page.dart';
 import '../../ui/controllers/course_controller.dart';
 import '../../../auth/ui/controllers/auth_controller.dart';
 import '../../domain/repositories/course_repository.dart';
@@ -337,6 +338,33 @@ class _CategoryListPageState extends State<CategoryListPage> {
                     subtitle: subtitle,
                     containerColor: containerColor,
                     onTap: () => _categoryController.viewGroups(c),
+                  ),
+                ),
+                // Button to view activities for this category
+                Tooltip(
+                  message: 'Ver actividades de la categoría',
+                  child: IconButton(
+                    icon: const Icon(Icons.task_outlined),
+                    onPressed: () {
+                      try {
+                        Get.to(
+                          () => const ActivityListPage(),
+                          arguments: {
+                            'courseId': c.courseId,
+                            'categoryId': c.id,
+                          },
+                        );
+                      } catch (e, st) {
+                        // Defensive: show error and avoid crashing
+                        debugPrint('Error navigating to ActivityListPage: $e');
+                        debugPrint('$st');
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('No se pudo abrir actividades: $e'),
+                          ),
+                        );
+                      }
+                    },
                   ),
                 ),
                 if (_isTeacher) const SizedBox(width: 8),

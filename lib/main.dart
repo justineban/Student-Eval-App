@@ -6,10 +6,34 @@ import 'features/courses/ui/pages/group_list_page.dart';
 import 'features/courses/ui/pages/enroll_course_page.dart';
 import 'core/navigation/splash_page.dart';
 
+import 'dart:async';
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initHive();
-  runApp(const MyApp());  
+
+  // Global Flutter error handler to print stacktraces to console
+  FlutterError.onError = (FlutterErrorDetails details) {
+    // Print to console (visible in debug console)
+    // ignore: avoid_print
+    print('FlutterError caught: ${details.exception}');
+    // ignore: avoid_print
+    print(details.stack);
+    FlutterError.presentError(details);
+  };
+
+  // Catch any uncaught errors in the zone
+  runZonedGuarded(
+    () {
+      runApp(const MyApp());
+    },
+    (error, stack) {
+      // ignore: avoid_print
+      print('Uncaught zone error: $error');
+      // ignore: avoid_print
+      print(stack);
+    },
+  );
 }
 
 class MyApp extends StatelessWidget {
