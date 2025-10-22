@@ -5,6 +5,7 @@ import '../../../../core/ui/widgets/list_button_card.dart';
 import '../../../assessments/ui/controllers/category_controller.dart';
 import '../../../assessments/domain/models/category_model.dart';
 import '../../../assessments/ui/pages/activity_list_page.dart';
+import '../../../reports/ui/pages/category_notes_page.dart';
 import '../../ui/controllers/course_controller.dart';
 import '../../../auth/ui/controllers/auth_controller.dart';
 import '../../domain/repositories/course_repository.dart';
@@ -367,6 +368,25 @@ class _CategoryListPageState extends State<CategoryListPage> {
                     },
                   ),
                 ),
+                // Button to view notes for this category (only for teachers)
+                if (_isTeacher)
+                  Tooltip(
+                    message: 'Ver notas de la categoría',
+                    child: IconButton(
+                      icon: const Icon(Icons.stacked_bar_chart_outlined),
+                      onPressed: () {
+                        try {
+                          Get.to(() => CategoryNotesPage(category: c));
+                        } catch (e, st) {
+                          debugPrint('Error navigating to CategoryNotesPage: $e');
+                          debugPrint('$st');
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('No se pudo abrir notas: $e')),
+                          );
+                        }
+                      },
+                    ),
+                  ),
                 if (_isTeacher) const SizedBox(width: 8),
                 if (_isTeacher)
                   Tooltip(

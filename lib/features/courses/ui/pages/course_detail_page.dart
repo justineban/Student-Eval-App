@@ -6,6 +6,8 @@ import '../../../auth/ui/controllers/auth_controller.dart';
 import '../../ui/controllers/course_controller.dart';
 import '../../../auth/data/datasources/user_remote_roble_datasource.dart';
 import 'category_list_page.dart';
+import '../../../reports/ui/pages/course_report_page.dart';
+import '../../../grades/ui/pages/student_course_grades_page.dart';
 
 class CourseDetailPage extends StatefulWidget {
   final CourseModel course; // initial snapshot
@@ -403,6 +405,22 @@ class _CourseDetailPageState extends State<CourseDetailPage> {
                             ),
                             icon: const Icon(Icons.category_outlined),
                             label: const Text('Ver categorías'),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: () {
+                              // If teacher -> course report (full)
+                              // else -> student view (only own grades)
+                              if (_isTeacher) {
+                                Get.to(() => CourseReportPage(course: course));
+                              } else {
+                                Get.to(() => StudentCourseGradesPage(course: course));
+                              }
+                            },
+                            icon: const Icon(Icons.stacked_bar_chart_outlined),
+                            label: const Text('Ver notas'),
                           ),
                         ),
                       ],
